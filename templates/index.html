@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BJT DC Bias Calculator</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main class="card">
+  <h1>BJT DC Bias Calculator</h1>
+  <p class="subtitle">NPN Common Emitter · Voltage-Divider Bias ·
+    แบบจำลอง Forward-Active (β คงที่, VBE คงที่)</p>
+
+  {% if error %}
+  <div class="error" role="alert">
+    <strong>ข้อมูลไม่ถูกต้อง:</strong> {{ error }}
+  </div>
+  {% endif %}
+
+  {% if result %}
+    {% for w in result.warnings %}
+    <div class="warning" role="alert">⚠️ {{ w }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" action="/calculate">
+    <div class="grid">
+      <label>VCC (V)
+        <input type="number" step="any" inputmode="decimal" name="vcc"
+               value="{{ entered.vcc if entered and entered.vcc else defaults.vcc }}" required>
+      </label>
+      <label>R1 (kΩ)
+        <input type="number" step="any" inputmode="decimal" name="r1"
+               value="{{ entered.r1 if entered and entered.r1 else defaults.r1 }}" required>
+      </label>
+      <label>R2 (kΩ)
+        <input type="number" step="any" inputmode="decimal" name="r2"
+               value="{{ entered.r2 if entered and entered.r2 else defaults.r2 }}" required>
+      </label>
+      <label>RC (kΩ)
+        <input type="number" step="any" inputmode="decimal" name="rc"
+               value="{{ entered.rc if entered and entered.rc else defaults.rc }}" required>
+      </label>
+      <label>RE (kΩ)
+        <input type="number" step="any" inputmode="decimal" name="re"
+               value="{{ entered.re if entered and entered.re else defaults.re }}" required>
+      </label>
+      <label>β (hFE)
+        <input type="number" step="any" inputmode="decimal" name="beta"
+               value="{{ entered.beta if entered and entered.beta else defaults.beta }}" required>
+      </label>
+      <label>VBE (V)
+        <input type="number" step="any" inputmode="decimal" name="vbe"
+               value="{{ entered.vbe if entered and entered.vbe else defaults.vbe }}" required>
+      </label>
+    </div>
+    <button type="submit">Calculate DC Bias</button>
+  </form>
+
+  {% if result %}
+  <section class="results">
+    <h2>DC Bias Results</h2>
+    <p class="region region-{{ result.region }}">
+      Operating region: <strong>{{ result.region }}</strong>
+    </p>
+    <table>
+      <thead>
+        <tr><th>ค่า</th><th>ผลลัพธ์</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>VTH (Thevenin voltage)</td><td>{{ "%.3f"|format(result.vth) }} V</td></tr>
+        <tr><td>RTH (Thevenin resistance)</td><td>{{ "%.3f"|format(result.rth / 1000) }} kΩ</td></tr>
+        <tr><td>IB (base current)</td><td>{{ "%.3f"|format(result.ib * 1e6) }} µA</td></tr>
+        <tr><td>IC (collector current)</td><td>{{ "%.3f"|format(result.ic * 1000) }} mA</td></tr>
+        <tr><td>IE (emitter current)</td><td>{{ "%.3f"|format(result.ie * 1000) }} mA</td></tr>
+        <tr><td>VE (emitter voltage)</td><td>{{ "%.3f"|format(result.ve) }} V</td></tr>
+        <tr><td>VB (base voltage)</td><td>{{ "%.3f"|format(result.vb) }} V</td></tr>
+        <tr><td>VC (collector voltage)</td><td>{{ "%.3f"|format(result.vc) }} V</td></tr>
+        <tr><td>VCE (collector-emitter)</td><td>{{ "%.3f"|format(result.vce) }} V</td></tr>
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <footer>
+    <p>สมการอ้างอิง: VTH = VCC·R2/(R1+R2), RTH = R1·R2/(R1+R2),
+      IB = (VTH−VBE)/(RTH+(β+1)RE), IC = β·IB, IE = (β+1)·IB,
+      VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE</p>
+    <p>แบบจำลอง Forward-Active — ค่าที่ออกนอกสมมติฐานจะแสดง Warning
+      และไม่ควรใช้เป็นผลจำลองที่เชื่อถือได้</p>
+  </footer>
+</main>
+</body>
+</html>

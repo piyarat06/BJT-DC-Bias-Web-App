@@ -1,0 +1,123 @@
+/* BJT DC Bias Web App — ENG29 2121 Lab 02 */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Tahoma, "Leelawadee UI", "Noto Sans Thai", Arial, sans-serif;
+  background: #f0f5fa;
+  color: #17344b;
+  line-height: 1.6;
+}
+
+.card {
+  max-width: 760px;
+  margin: 32px auto;
+  padding: 28px 32px;
+  background: #ffffff;
+  border: 1px solid #d3e0ec;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(16, 54, 88, 0.08);
+}
+
+h1 { color: #103658; margin: 0 0 4px; font-size: 1.6rem; }
+
+.subtitle { color: #546d83; margin-top: 0; font-size: 0.95rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 18px;
+  margin: 18px 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #155a78;
+}
+
+input {
+  margin-top: 4px;
+  padding: 9px 10px;
+  border: 1px solid #b9cddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+input:focus { outline: 2px solid #1d638b; border-color: #1d638b; }
+
+button {
+  background: #0c8078;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px 26px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover { background: #0a6a63; }
+
+.error {
+  background: #fdeceb;
+  border-left: 5px solid #c0392b;
+  color: #7b241c;
+  padding: 12px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+}
+
+.warning {
+  background: #fff4e9;
+  border-left: 5px solid #b85c2c;
+  color: #7c3f14;
+  padding: 12px 14px;
+  border-radius: 0 6px 6px 0;
+  margin: 14px 0;
+}
+
+.results { margin-top: 26px; }
+
+.results h2 { color: #113c60; font-size: 1.2rem; }
+
+.region {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+.region-forward_active { background: #e9f6f2; color: #178875; }
+.region-cutoff { background: #fff4e9; color: #b85c2c; }
+.region-saturation { background: #fdeceb; color: #c0392b; }
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.97rem;
+}
+
+th, td {
+  border: 1px solid #d3e0ec;
+  padding: 9px 12px;
+  text-align: left;
+}
+
+th { background: #e6f1fa; color: #123e5c; }
+
+tbody tr:nth-child(even) { background: #f7fbfe; }
+
+footer {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid #e2ebf3;
+  color: #546d83;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 560px) {
+  .card { margin: 10px; padding: 18px; }
+}
