@@ -18,7 +18,9 @@
 1. **TDD**: เขียน failing test ก่อน ดูมัน fail แล้วค่อย implement
    (Red → Green → Refactor)
 2. ก่อน commit ทุกครั้ง ต้องรัน
-   `py -m unittest discover -s tests -v` (จาก repo root) และผ่าน 100%
+   `.venv\Scripts\python.exe -m unittest discover -s tests -v`
+   (จาก repo root — flask ติดตั้งอยู่ใน `.venv` เท่านั้น คำสั่ง `py` ของระบบ
+   จึง import flask ไม่ได้) และผ่าน 100%
 3. ภาษาของ UI และข้อความ error/warning คือ **ภาษาไทย** (ศัพท์เทคนิค
    อังกฤษ เช่น VCC, Calculate DC Bias)
 4. ห้าม commit `.venv/`, `__pycache__/`, `.env`, API keys หรือ credentials
