@@ -12,6 +12,9 @@ class TestWeb(unittest.TestCase):
         resp = self.client.get("/")
         self.assertEqual(resp.status_code, 200)
         text = resp.data.decode("utf-8")
+        # all seven inputs must exist with the exact names POST /calculate reads
+        for field in ("vcc", "r1", "r2", "rc", "re", "beta", "vbe"):
+            self.assertIn(f'name="{field}"', text)
         self.assertIn("VCC", text)
         self.assertIn("Calculate DC Bias", text)
 
