@@ -44,6 +44,9 @@ def _validate(vcc, r1, r2, rc, re, beta, vbe) -> None:
         raise ValueError("VBE ต้องไม่ติดลบ")
 
 
+SATURATION_THRESHOLD_V = 0.2  # below this VCE the forward-active model breaks
+
+
 def solve(vcc, r1, r2, rc, re, beta, vbe) -> DCBiasResult:
     """Compute the DC operating point of a voltage-divider biased
     NPN common-emitter stage.
@@ -57,6 +60,19 @@ def solve(vcc, r1, r2, rc, re, beta, vbe) -> DCBiasResult:
     vth = vcc * r2 / (r1 + r2)
     rth = r1 * r2 / (r1 + r2)
 
+    # Cutoff: the divider cannot forward-bias the base-emitter junction,
+    # so no base current flows and the transistor is off.
+    if vth <= vbe:
+        return DCBiasResult(
+            vth=vth, rth=rth, ib=0.0, ic=0.0, ie=0.0,
+            ve=0.0, vb=vth, vc=vcc, vce=vcc,
+            region="cutoff",
+            warnings=[
+                "Cutoff: VTH ≤ VBE ทรานซิสเตอร์ไม่นำ (IB = 0) — "
+                "แบบจำลอง Forward-Active ใช้ไม่ได้กับค่าที่ป้อน"
+            ],
+        )
+
     # Forward-active approximation
     ib = (vth - vbe) / (rth + (beta + 1) * re)
     ic = beta * ib
@@ -66,9 +82,18 @@ def solve(vcc, r1, r2, rc, re, beta, vbe) -> DCBiasResult:
     vc = vcc - ic * rc
     vce = vc - ve
 
+    region = "forward_active"
+    warnings = []
+    if vce < SATURATION_THRESHOLD_V:
+        region = "saturation"
+        warnings.append(
+            "Saturation: VCE < 0.2 V — "
+            "ค่าที่คำนวณด้วยแบบจำลอง Forward-Active ไม่น่าเชื่อถือ"
+        )
+
     return DCBiasResult(
         vth=vth, rth=rth, ib=ib, ic=ic, ie=ie,
         ve=ve, vb=vb, vc=vc, vce=vce,
-        region="forward_active",
-        warnings=[],
+        region=region,
+        warnings=warnings,
     )

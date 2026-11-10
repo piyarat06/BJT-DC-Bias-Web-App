@@ -48,5 +48,29 @@ class TestValidation(unittest.TestCase):
         self.assertIn("R1", str(ctx.exception))
 
 
+class TestRegionWarnings(unittest.TestCase):
+    def test_cutoff_region(self):
+        # VCC=5, R1=100k, R2=1k -> VTH = 0.0495 V <= 0.7 V
+        r = solve(5.0, 100e3, 1e3, 2.2e3, 1e3, 100.0, 0.7)
+        self.assertEqual(r.region, "cutoff")
+        self.assertEqual(r.ib, 0.0)
+        self.assertEqual(r.ic, 0.0)
+        self.assertAlmostEqual(r.vb, 0.049505, delta=1e-6)
+        self.assertAlmostEqual(r.vc, 5.0, delta=1e-9)
+        self.assertTrue(any("Cutoff" in w for w in r.warnings))
+
+    def test_cutoff_boundary_vth_equals_vbe(self):
+        # VCC=1.4, R1=R2=1k -> VTH = 0.7 V == VBE
+        r = solve(1.4, 1e3, 1e3, 1e3, 1e3, 100.0, 0.7)
+        self.assertEqual(r.region, "cutoff")
+
+    def test_saturation_region(self):
+        # VCC=1.2, R1=10k, R2=100k, RC=2.2k, RE=1k, beta=100 -> VCE ~ 0.06 V
+        r = solve(1.2, 10e3, 100e3, 2.2e3, 1e3, 100.0, 0.7)
+        self.assertEqual(r.region, "saturation")
+        self.assertLess(r.vce, 0.2)
+        self.assertTrue(any("Saturation" in w for w in r.warnings))
+
+
 if __name__ == "__main__":
     unittest.main()
