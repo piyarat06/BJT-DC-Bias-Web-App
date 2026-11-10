@@ -26,5 +26,27 @@ class TestSolveReferenceValues(unittest.TestCase):
             self.assertTrue(getattr(r, name) == getattr(r, name), f"{name} ไม่ใช่ finite number")
 
 
+class TestValidation(unittest.TestCase):
+    def test_invalid_inputs_raise_value_error(self):
+        cases = [
+            ((0.0, 100e3, 22e3, 2.2e3, 1e3, 100.0, 0.7), "VCC"),
+            ((12.0, 0.0, 22e3, 2.2e3, 1e3, 100.0, 0.7), "R1"),
+            ((12.0, 100e3, -5.0, 2.2e3, 1e3, 100.0, 0.7), "R2"),
+            ((12.0, 100e3, 22e3, 0.0, 1e3, 100.0, 0.7), "RC"),
+            ((12.0, 100e3, 22e3, 2.2e3, -1.0, 100.0, 0.7), "RE"),
+            ((12.0, 100e3, 22e3, 2.2e3, 1e3, 0.0, 0.7), "β"),
+            ((12.0, 100e3, 22e3, 2.2e3, 1e3, 100.0, -0.1), "VBE"),
+        ]
+        for args, name in cases:
+            with self.subTest(field=name):
+                with self.assertRaises(ValueError):
+                    solve(*args)
+
+    def test_error_message_names_the_field(self):
+        with self.assertRaises(ValueError) as ctx:
+            solve(12.0, 0.0, 22e3, 2.2e3, 1e3, 100.0, 0.7)
+        self.assertIn("R1", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()
