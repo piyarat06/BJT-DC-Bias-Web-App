@@ -32,13 +32,14 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผล: **Ran 15 tests — OK (ผ่านทั้งหมด)**
-- `tests/test_dc_bias.py` — 7 tests: ค่าอ้างอิง 9 ค่า, ตัวเลขสุดขั้ว,
-  validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์, cutoff, ขอบเขต
-  VTH==VBE, saturation
-- `tests/test_web.py` — 8 tests ผ่าน Flask test client: GET /, POST
-  คำนวณจริง, ค่าติดลบ, ค่าไม่ใช่ตัวเลข, ช่องว่าง, ค่ามีช่องว่างรอบ
-  ตัวเลข, warning cutoff และ saturation แสดงบนหน้าเว็บ
+ผล: **Ran 18 tests — OK (ผ่านทั้งหมด)**
+- `tests/test_dc_bias.py` — 9 tests: ค่าอ้างอิง 9 ค่า, ตัวเลขสุดขั้ว
+  (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
+  ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation
+- `tests/test_web.py` — 9 tests ผ่าน Flask test client: GET / ฟอร์มครบ
+  7 ช่อง, POST คำนวณจริง, ค่าติดลบ, ค่าไม่ใช่ตัวเลข, ค่า inf (1e309),
+  ช่องว่าง, ค่ามีช่องว่างรอบตัวเลข, warning cutoff และ saturation
+  แสดงบนหน้าเว็บ
 
 ## 3. การทดลองบน Browser จริง (http://127.0.0.1:5000/)
 
@@ -47,14 +48,16 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 | ค่า default → กด Calculate DC Bias | ตาราง DC Bias Results 9 ค่าพร้อมหน่วย, region = forward_active | ✓ |
 | R1 = −5 | กล่องแดง "ข้อมูลไม่ถูกต้อง: R1 ต้องมากกว่า 0" หน้าไม่ล้ม (HTTP 200) | ✓ |
 | VCC = abc | กล่องแดง "VCC ต้องเป็นตัวเลข เช่น 12" หน้าไม่ล้ม | ✓ |
+| VCC = 1e309 (Python parse เป็น inf) | กล่องแดง "VCC ต้องเป็นจำนวนจำกัด (ห้าม inf หรือ NaN)" หน้าไม่ล้ม — จาก code review fix | ✓ |
 | VCC=5, R2=1 (VTH=0.05 V < VBE) | region = cutoff + กล่องส้มเตือน "Cutoff: VTH ≤ VBE ทรานซิสเตอร์ไม่นำ …" | ✓ |
 | VCC=1.2, R1=10, R2=100 (VCE≈0.06 V) | region = saturation + กล่องส้มเตือน "Saturation: VCE < 0.2 V … ไม่น่าเชื่อถือ" | ✓ |
 
 ## 4. Reproducibility
 
 สร้าง venv ใหม่ทั้งหมด (`.venv-verify`) → `pip install -r requirements.txt`
-→ รัน tests → 15/15 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
-README ได้ผลเหมือนกัน (เกณฑ์ A7)
+→ รัน tests → 18/18 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
+README ได้ผลเหมือนกัน (เกณฑ์ A7) — ตรวจซ้ำหลังแก้ปัญหาจาก code review
+(มี tests เพิ่มเป็น 18 ตัว) ก่อนส่งมอบ
 
 ## 5. ข้อจำกัดของแบบจำลอง
 

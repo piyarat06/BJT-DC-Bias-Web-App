@@ -22,8 +22,8 @@ BJT DC Bias Web App/
 ├── templates/index.html    # ฟอร์มอินพุต + ตารางผลลัพธ์ (Jinja2)
 ├── static/style.css        # การแสดงผล
 ├── tests/
-│   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (7 tests)
-│   └── test_web.py         # Flask HTTP tests ผ่าน test client (8 tests)
+│   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (9 tests)
+│   └── test_web.py         # Flask HTTP tests ผ่าน test client (9 tests)
 ├── requirements.txt        # flask>=3.0
 ├── README.md               # เอกสารนี้
 ├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent
@@ -65,8 +65,8 @@ python -m flask --app app run --debug
 python -m unittest discover -s tests -v
 ```
 
-ผลที่คาดหวัง: `Ran 15 tests ... OK`
-(test_dc_bias 7 ตัว + test_web 8 ตัว)
+ผลที่คาดหวัง: `Ran 18 tests ... OK`
+(test_dc_bias 9 ตัว + test_web 9 ตัว)
 
 ## ข้อมูลทดลองอ้างอิง
 
@@ -82,9 +82,9 @@ VCE = 8.052 V (forward-active)
 | A1 · GET / | HTTP 200 + ฟอร์มครบ 7 ช่อง | `test_web.py::test_get_index_returns_form` |
 | A2 · POST /calculate | Python คำนวณจริง ไม่มีค่าฮาร์ดโคด | `test_web.py::test_post_calculate_shows_result` |
 | A3 · Engineering reference | ผลตรงการคำนวณมืออิสระ | `test_dc_bias.py::test_solve_reference_values` |
-| A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
+| A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/inf/NaN/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
 | A5 · Region warnings | Cutoff/Saturation แสดง Warning | `test_dc_bias.py::TestRegionWarnings`, `test_web.py::test_*_warning_displayed` |
-| A6 · Tests | 7 unit + 8 HTTP = 15 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
+| A6 · Tests | 9 unit + 9 HTTP = 18 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
 | A7 · Reproducibility | clone → ติดตั้ง → รัน → tests ตาม README นี้ | ขั้นตอนด้านบน |
 
 ## หมายเหตุความปลอดภัย
