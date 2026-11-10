@@ -34,6 +34,14 @@ class TestWeb(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("ต้องเป็นตัวเลข", resp.data.decode("utf-8"))
 
+    def test_post_non_finite_value(self):              # review fix: 1e309 -> inf
+        form = dict(DEFAULTS_FORM, vcc="1e309")
+        resp = self.client.post("/calculate", data=form)
+        self.assertEqual(resp.status_code, 200)
+        text = resp.data.decode("utf-8")
+        self.assertIn("VCC", text)
+        self.assertIn("จำนวนจำกัด", text)
+
     def test_post_empty_field(self):                   # A4
         form = dict(DEFAULTS_FORM, r2="")
         resp = self.client.post("/calculate", data=form)

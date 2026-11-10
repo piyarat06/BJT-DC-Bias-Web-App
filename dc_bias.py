@@ -6,6 +6,7 @@ Pure engineering logic: stdlib only, SI units in (V, ohm) and out (V, A).
 This module knows nothing about HTTP or HTML.
 """
 
+import math
 from dataclasses import dataclass, field
 
 
@@ -34,6 +35,12 @@ def _require_positive(name: str, value: float) -> None:
 
 def _validate(vcc, r1, r2, rc, re, beta, vbe) -> None:
     """Check engineering sanity of inputs before computing."""
+    # inf/NaN parse successfully in Python ("1e309" -> inf, "nan" -> nan),
+    # so gate them here: a calculator must never present them as results.
+    for name, value in (("VCC", vcc), ("R1", r1), ("R2", r2), ("RC", rc),
+                        ("RE", re), ("β", beta), ("VBE", vbe)):
+        if not math.isfinite(value):
+            raise ValueError(f"{name} ต้องเป็นจำนวนจำกัด (ห้าม inf หรือ NaN)")
     _require_positive("VCC", vcc)
     _require_positive("R1", r1)
     _require_positive("R2", r2)

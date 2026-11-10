@@ -1,4 +1,6 @@
+import math
 import unittest
+
 from dc_bias import solve
 
 
@@ -23,7 +25,7 @@ class TestSolveReferenceValues(unittest.TestCase):
     def test_extreme_resistors_no_crash(self):
         r = solve(12.0, 1e9, 1e9, 1e6, 1e6, 100.0, 0.7)
         for name in ("vth", "rth", "ib", "ic", "ie", "ve", "vb", "vc", "vce"):
-            self.assertTrue(getattr(r, name) == getattr(r, name), f"{name} ไม่ใช่ finite number")
+            self.assertTrue(math.isfinite(getattr(r, name)), f"{name} ไม่ใช่ finite number")
 
 
 class TestValidation(unittest.TestCase):
@@ -46,6 +48,26 @@ class TestValidation(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             solve(12.0, 0.0, 22e3, 2.2e3, 1e3, 100.0, 0.7)
         self.assertIn("R1", str(ctx.exception))
+
+    def test_non_finite_inputs_raise_value_error(self):
+        # float("1e309") == inf and float("nan") == nan parse successfully,
+        # so validation must reject them before they reach the equations.
+        cases = [
+            (float("inf"), 100e3, 22e3, 2.2e3, 1e3, 100.0, 0.7),
+            (float("nan"), 100e3, 22e3, 2.2e3, 1e3, 100.0, 0.7),
+            (12.0, float("inf"), 22e3, 2.2e3, 1e3, 100.0, 0.7),
+            (12.0, 100e3, 22e3, 2.2e3, 1e3, float("inf"), 0.7),
+            (12.0, 100e3, 22e3, 2.2e3, 1e3, 100.0, float("nan")),
+        ]
+        for args in cases:
+            with self.subTest(first_arg=args[0]):
+                with self.assertRaises(ValueError):
+                    solve(*args)
+
+    def test_non_finite_error_message_names_the_field(self):
+        with self.assertRaises(ValueError) as ctx:
+            solve(float("inf"), 100e3, 22e3, 2.2e3, 1e3, 100.0, 0.7)
+        self.assertIn("VCC", str(ctx.exception))
 
 
 class TestRegionWarnings(unittest.TestCase):
