@@ -32,16 +32,18 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผล (หลังเพิ่ม Fixed/Emitter + code review fix): **Ran 37 tests — OK (ผ่านทั้งหมด)**
+ผล (หลังเพิ่ม Fixed/Emitter + รวมหน้าเดียว + code review fix): **Ran 39 tests — OK (ผ่านทั้งหมด)**
 - `tests/test_dc_bias.py` — 17 tests: ค่าอ้างอิง 9 ค่าของ Voltage-Divider,
   ตัวเลขสุดขั้ว (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
   ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation **+ 8 tests
  ของ Fixed/Emitter** (ค่าอ้างอิง 2 วงจร, cutoff 2, saturation 2, validate RB/RE, inf/NaN)
-- `tests/test_web.py` — 20 tests ผ่าน Flask test client: GET / ฟอร์มครบ
+- `tests/test_web.py` — 22 tests ผ่าน Flask test client: GET / ฟอร์มครบ
   7 ช่อง, POST คำนวณจริง, ค่าติดลบ, ค่าไม่ใช่ตัวเลข, ค่า inf (1e309),
   ช่องว่าง, ค่ามีช่องว่างรอบตัวเลข, warning cutoff และ saturation
-  แสดงบนหน้าเว็บ **+ 11 tests ของ 3 หน้า** (GET /fixed, /emitter, POST ผลจริง,
-  ลิงก์สลับหน้า, RB ติดลบ/ว่าง, inf, cutoff, saturation, ค่าที่กรอกค้างหลัง error)
+  แสดงบนหน้าเว็บ **+ 13 tests ของหน้าเดียว/ส่วนต่อขยาย** (3 `<details>` ใน `/`,
+  query param เปิดส่วนที่ขอ + fallback, redirect URL เก่า 302, POST ผลจริงของ 3 วงจร
+  พร้อม `<details open>` ตรงส่วนที่ส่ง, default RB=470.0, RB ติดลบ/ว่าง,
+  inf, cutoff, saturation, ค่าที่กรอกค้างหลัง error)
 
 ## 3. การทดลองบน Browser จริง (http://127.0.0.1:5000/)
 
@@ -57,9 +59,9 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 ## 4. Reproducibility
 
 สร้าง venv ใหม่ทั้งหมด (`.venv-verify`) → `pip install -r requirements.txt`
-→ รัน tests → 37/37 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
+→ รัน tests → 39/39 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
 README ได้ผลเหมือนกัน (เกณฑ์ A7) — ตรวจซ้ำหลังแก้ปัญหาจาก code review
-และหลังเพิ่ม Fixed/Emitter Bias (มี tests เพิ่มเป็น 37 ตัว) ก่อนส่งมอบ
+และหลังเพิ่ม Fixed/Emitter Bias + รวมหน้าเดียว (มี tests เพิ่มเป็น 39 ตัว) ก่อนส่งมอบ
 
 ## 5. ข้อจำกัดของแบบจำลอง
 
@@ -84,14 +86,17 @@ README ได้ผลเหมือนกัน (เกณฑ์ A7) — ต�
 | VCE | 6.711 V | 6.711 V | 5.647 V | 5.647 V | ✓ |
 | region | forward_active | forward_active | forward_active | forward_active | ✓ |
 
-HTTP smoke test บน debug server (`http://127.0.0.1:5000/`):
-GET `/`, `/fixed`, `/emitter` → 200 ทั้งสามหน้า · POST `/calculate` →
-มี `1.230` mA · POST `/calculate-fixed` → มี `2.404` mA ·
-POST `/calculate-emitter` → มี `1.979` mA และ `5.647` V
+HTTP smoke test บน debug server (`http://127.0.0.1:5000/`, หลังรวมหน้าเดียว):
+GET `/`, `/?circuit=fixed`, `/?circuit=emitter` → 200 และ `details_count=3` ทุกครั้ง ·
+GET `/fixed` → 302 `/?circuit=fixed` · GET `/emitter` → 302 `/?circuit=emitter` ·
+POST `/calculate` → มี `1.230` mA และเปิดส่วน Voltage-Divider ·
+POST `/calculate-fixed` → มี `2.404` mA พร้อม `<details open>` ของ Fixed ·
+POST `/calculate-emitter` → มี `1.979` mA และ `5.647` V พร้อมเปิดส่วน Emitter
 
 กรณีตรวจเพิ่ม (test client + browser):
 RB = −5 → `RB ต้องมากกว่า 0` · RB ว่าง → `RB ต้องเป็นตัวเลข` ·
 `vcc = 1e309` → `VCC ต้องเป็นจำนวนจำกัด` · VCC=0.5 V → Cutoff warning ·
 RB=10 kΩ → Saturation warning — ทุกกรณี HTTP 200 หน้าไม่ล้ม
+(ข้อความ error/warning ค้างอยู่ใน **ส่วนที่ส่งเท่านั้น** หลังรวมหน้าเดียว)
 
-จำนวน tests รวมหลังส่วนต่อขยาย: **37 tests (17 unit + 20 HTTP) — OK**
+จำนวน tests รวมหลังส่วนต่อขยาย + รวมหน้าเดียว: **39 tests (17 unit + 22 HTTP) — OK**

@@ -97,3 +97,23 @@ VC  = VCC − IC·RC                    VCE = VC − VE
 - ผลอ้างอิง: Fixed IC=2.404 mA / VCE=6.711 V · Emitter IC=1.979 mA / VCE=5.647 V
 - รายละเอียดการตัดสินใจ: `docs/superpowers/specs/2026-11-17-fixed-emitter-bias-design.md`
   · ลำดับงาน: `docs/superpowers/plans/2026-11-17-fixed-emitter-bias.md`
+
+## รวมหน้า 17 พ.ย. 2569 (ต่อจากส่วนขยาย Fixed/Emitter)
+
+ตามที่เจ้าของงานขอ **หน้าเดียวเวลาคำนวณแค่เพิ่มค่าเข้าไป** จึงเปลี่ยน UI จาก 3 หน้า
+เป็น **`/` หน้าเดียว** (แทนที่โครงสร้างแถบลิงก์ในส่วนประวัติข้างบน):
+
+- `templates/index.html` มี `<details class="circuit">` สามส่วนพับได้:
+  Voltage-Divider Bias / Fixed Bias / Emitter Bias — **ไม่ใช้ JavaScript**
+- แต่ละส่วนมีฟอร์ม POST ของตัวเอง (`/calculate`, `/calculate-fixed`,
+  `/calculate-emitter`) และ include `_results.html` ร่วมกัน
+- หลัง submit ระบบส่ง `circuit` กลับมาเปิด **เฉพาะส่วนที่กด** และแสดง
+  result/error/entered เฉพาะส่วนนั้น (ค่าที่กรอกผิดยังค้างอยู่ในช่องเดิม)
+- `GET /` อ่าน `?circuit=` (ค่าไม่อยู่ใน `divider|fixed|emitter` → fallback `divider`)
+  · `GET /fixed` → redirect 302 ไป `/?circuit=fixed` ·
+  `GET /emitter` → redirect 302 ไป `/?circuit=emitter` — bookmarks เก่ายังใช้ได้
+- ลบ `fixed.html`, `emitter.html`, `_nav.html`; CSS เปลี่ยน `.nav` → `.circuit`
+- **สเปค/สมการ/validation/cutoff-saturation/ค่าอ้างอิง (1.230 / 2.404 / 1.979 mA)
+  ไม่เปลี่ยน** — เป็นการจัด layout ใหม่ล้วน ๆ
+- รายละเอียดการตัดสินใจ: `docs/superpowers/specs/2026-11-17-single-page-design.md`
+  · ลำดับงาน: `docs/superpowers/plans/2026-11-17-single-page.md`

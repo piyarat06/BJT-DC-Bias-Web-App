@@ -6,6 +6,11 @@ NPN Common-Emitter 3 แบบ: **Voltage-Divider Bias**, **Fixed Bias** แล�
 ของวิชา ENG29 2121 (Computer Programming for Electrical Engineers)
 ภาค 2/2569 Lab 02 (สองวงจรหลังเป็นส่วนต่อขยายเมื่อ 17 พ.ย. 2569)
 
+หน้าเว็บเป็น **หน้าเดียว `/` แบ่งเป็น 3 ส่วนพับได้** (`<details>`) ไม่ใช้ JavaScript:
+แต่ละส่วนมีฟอร์มและตารางผลของตัวเอง กด Calculate ส่วนไหนก็เปิดส่วนนั้น
+URL เก่า `/fixed` และ `/emitter` ยังใช้ได้ โดย redirect ไป `/?circuit=fixed`
+และ `/?circuit=emitter` (รวมหน้าเมื่อ 17 พ.ย. 2569)
+
 ## สมมติฐานการคำนวณ
 
 ใช้ **Forward-Active Approximation**: β คงที่ (ไม่ขึ้นกับ IC) และ VBE คงที่
@@ -18,18 +23,15 @@ forward-active region** (Cutoff: VTH ≤ VBE หรือ Saturation: VCE < 0.2 
 
 ```
 BJT DC Bias Web App/
-├── app.py                  # Flask routes 3 หน้า (GET / , /fixed , /emitter + POST /calculate*)
+├── app.py                  # Flask routes หน้าเดียว (GET / + 3 POST /calculate* + redirect /fixed , /emitter)
 ├── dc_bias.py              # engineering module: solve/solve_fixed/solve_emitter + validation + region (ไม่รู้จัก HTML/HTTP)
 ├── templates/
-│   ├── index.html          # ฟอร์ม Voltage-Divider Bias
-│   ├── fixed.html          # ฟอร์ม Fixed Bias
-│   ├── emitter.html        # ฟอร์ม Emitter Bias
-│   ├── _nav.html           # แถบลิงก์สลับ 3 วงจร (include ร่วม)
-│   └── _results.html       # warning + region + ตารางผล 9 ค่า (include ร่วม)
-├── static/style.css        # การแสดงผล
+│   ├── index.html          # หน้าเดียว: 3 <details> (Voltage-Divider / Fixed / Emitter) แต่ละส่วนมีฟอร์มของตัวเอง
+│   └── _results.html       # warning + region + ตารางผล 9 ค่า (include ร่วมทุกส่วน)
+├── static/style.css        # การแสดงผล (รวม .circuit แทน .nav)
 ├── tests/
 │   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (17 tests)
-│   └── test_web.py         # Flask HTTP tests ผ่าน test client (20 tests)
+│   └── test_web.py         # Flask HTTP tests ผ่าน test client (22 tests)
 ├── requirements.txt        # flask>=3.0
 ├── README.md               # เอกสารนี้
 ├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent
@@ -60,19 +62,21 @@ python -m pip install -r requirements.txt
 python -m flask --app app run --debug
 ```
 
-4. เปิด browser เลือกวงจรจากแถบลิงก์ด้านบน:
+4. เปิด browser ที่ **http://127.0.0.1:5000/** แล้วกดหัวข้อส่วนที่ต้องการ
+   ( Voltage-Divider / Fixed / Emitter ) เพื่อขยายฟอร์ม:
 
-| หน้า | ฟอร์ม | Route POST | ค่า default |
+| ส่วนในหน้าเดียว `/` | ฟอร์ม | Route POST | ค่า default |
 |---|---|---|---|
-| **http://127.0.0.1:5000/** | VCC, R1, R2, RC, RE, β, VBE | `/calculate` | 12 V, 100 kΩ, 22 kΩ, 2.2 kΩ, 1 kΩ, 100, 0.70 V |
-| **http://127.0.0.1:5000/fixed** | VCC, RB, RC, β, VBE | `/calculate-fixed` | 12 V, RB 470 kΩ, RC 2.2 kΩ, 100, 0.70 V |
-| **http://127.0.0.1:5000/emitter** | VCC, RB, RC, RE, β, VBE | `/calculate-emitter` | 12 V, RB 470 kΩ, RC 2.2 kΩ, RE 1 kΩ, 100, 0.70 V |
+| **Voltage-Divider Bias** (`/`) | VCC, R1, R2, RC, RE, β, VBE | `/calculate` | 12 V, 100 kΩ, 22 kΩ, 2.2 kΩ, 1 kΩ, 100, 0.70 V |
+| **Fixed Bias** (`/?circuit=fixed`, `/fixed` redirect) | VCC, RB, RC, β, VBE | `/calculate-fixed` | 12 V, RB 470 kΩ, RC 2.2 kΩ, 100, 0.70 V |
+| **Emitter Bias** (`/?circuit=emitter`, `/emitter` redirect) | VCC, RB, RC, RE, β, VBE | `/calculate-emitter` | 12 V, RB 470 kΩ, RC 2.2 kΩ, RE 1 kΩ, 100, 0.70 V |
 
 กรอกค่าแล้วกด **Calculate DC Bias** — ผลลัพธ์แสดงเป็นตารางพร้อม region
+ใต้ส่วนที่กด (ส่วนนั้นจะเปิดอัตโนมัติ ส่วนอื่นยังพับอยู่)
 
 สมการของ Fixed Bias: `IB = (VCC−VBE)/RB`, `VE = 0`, `VCE = VC`
 ของ Emitter Bias: `IB = (VCC−VBE)/(RB+(β+1)RE)`, `VE = IE·RE`
-ทั้งสองใช้ `VTH = VCC`, `RTH = RB` และเช็ค cutoff/saturation เหมือนหน้าเดิม
+ทั้งสองใช้ `VTH = VCC`, `RTH = RB` และเช็ค cutoff/saturation เหมือนส่วน Voltage-Divider
 
 ## การรัน Automated Tests
 
@@ -82,8 +86,8 @@ python -m flask --app app run --debug
 python -m unittest discover -s tests -v
 ```
 
-ผลที่คาดหวัง: `Ran 37 tests ... OK`
-(test_dc_bias 17 ตัว + test_web 20 ตัว)
+ผลที่คาดหวัง: `Ran 39 tests ... OK`
+(test_dc_bias 17 ตัว + test_web 22 ตัว)
 
 ## ข้อมูลทดลองอ้างอิง
 
@@ -106,10 +110,10 @@ VCE = 8.052 V (forward-active)
 | A3 · Engineering reference | ผลตรงการคำนวณมืออิสระ | `test_dc_bias.py::test_solve_reference_values` |
 | A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/inf/NaN/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
 | A5 · Region warnings | Cutoff/Saturation แสดง Warning | `test_dc_bias.py::TestRegionWarnings`, `test_web.py::test_*_warning_displayed` |
-| A6 · Tests | 17 unit + 20 HTTP = 37 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
+| A6 · Tests | 17 unit + 22 HTTP = 39 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
 | A7 · Reproducibility | clone → ติดตั้ง → รัน → tests ตาม README นี้ | ขั้นตอนด้านบน |
 | ส่วนต่อขยาย · Solver | Fixed/Emitter ตรงค่าคำนวณมือ + validation + cutoff/saturation | `test_dc_bias.py::TestFixedEmitter` |
-| ส่วนต่อขยาย · 3 หน้า | GET/POST ทั้ง 3 วงจร, แถบลิงก์, error/warning จริง | `test_web.py::TestFixedEmitterWeb` |
+| ส่วนต่อขยาย · หน้าเดียว 3 ส่วน | 3 `<details>` ใน `/`, เปิดเฉพาะส่วนที่ POST, query param, redirect URL เก่า, error/warning ค้างค่า | `test_web.py::TestFixedEmitterWeb` |
 
 ## หมายเหตุความปลอดภัย
 
