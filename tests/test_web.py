@@ -2,6 +2,8 @@ import unittest
 from app import app
 
 DEFAULTS_FORM = {"vcc": "12", "r1": "100", "r2": "22", "rc": "2.2", "re": "1", "beta": "100", "vbe": "0.7"}
+FIXED_FORM = {"vcc": "12", "rb": "470", "rc": "2.2", "beta": "100", "vbe": "0.7"}
+EMITTER_FORM = {**FIXED_FORM, "re": "1"}
 
 
 class TestWeb(unittest.TestCase):
@@ -65,6 +67,74 @@ class TestWeb(unittest.TestCase):
     def test_saturation_warning_displayed(self):        # A5
         form = {"vcc": "1.2", "r1": "10", "r2": "100", "rc": "2.2", "re": "1", "beta": "100", "vbe": "0.7"}
         resp = self.client.post("/calculate", data=form)
+        self.assertIn("Saturation", resp.data.decode("utf-8"))
+
+
+class TestFixedEmitterWeb(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_get_fixed_returns_form(self):
+        resp = self.client.get("/fixed")
+        self.assertEqual(resp.status_code, 200)
+        text = resp.data.decode("utf-8")
+        for field in ("vcc", "rb", "rc", "beta", "vbe"):
+            self.assertIn(f'name="{field}"', text)
+        self.assertNotIn('name="r1"', text)
+        self.assertNotIn('name="r2"', text)
+        self.assertIn("Calculate DC Bias", text)
+
+    def test_get_emitter_returns_form(self):
+        resp = self.client.get("/emitter")
+        self.assertEqual(resp.status_code, 200)
+        text = resp.data.decode("utf-8")
+        for field in ("vcc", "rb", "rc", "re", "beta", "vbe"):
+            self.assertIn(f'name="{field}"', text)
+
+    def test_post_fixed_calculates_real_value(self):
+        resp = self.client.post("/calculate-fixed", data=FIXED_FORM)
+        self.assertEqual(resp.status_code, 200)
+        text = resp.data.decode("utf-8")
+        self.assertIn("2.404", text)
+        self.assertIn("mA", text)
+        self.assertIn("forward_active", text)
+
+    def test_post_emitter_calculates_real_value(self):
+        resp = self.client.post("/calculate-emitter", data=EMITTER_FORM)
+        self.assertEqual(resp.status_code, 200)
+        text = resp.data.decode("utf-8")
+        self.assertIn("1.979", text)
+        self.assertIn("5.647", text)
+
+    def test_nav_links_on_all_pages(self):
+        for path in ("/", "/fixed", "/emitter"):
+            with self.subTest(path=path):
+                text = self.client.get(path).data.decode("utf-8")
+                for href in ('href="/"', 'href="/fixed"', 'href="/emitter"'):
+                    self.assertIn(href, text)
+
+    def test_post_fixed_invalid_rb(self):
+        resp = self.client.post("/calculate-fixed", data=dict(FIXED_FORM, rb="-5"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("RB ต้องมากกว่า 0", resp.data.decode("utf-8"))
+
+    def test_post_blank_rb_shows_error(self):
+        resp = self.client.post("/calculate-fixed", data=dict(FIXED_FORM, rb=""))
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("RB ต้องเป็นตัวเลข", resp.data.decode("utf-8"))
+
+    def test_post_emitter_non_finite_vcc(self):
+        resp = self.client.post("/calculate-emitter", data=dict(EMITTER_FORM, vcc="1e309"))
+        text = resp.data.decode("utf-8")
+        self.assertIn("VCC", text)
+        self.assertIn("จำนวนจำกัด", text)
+
+    def test_post_fixed_cutoff_warning(self):
+        resp = self.client.post("/calculate-fixed", data=dict(FIXED_FORM, vcc="0.5"))
+        self.assertIn("Cutoff", resp.data.decode("utf-8"))
+
+    def test_post_emitter_saturation_warning(self):
+        resp = self.client.post("/calculate-emitter", data=dict(EMITTER_FORM, rb="10"))
         self.assertIn("Saturation", resp.data.decode("utf-8"))
 
 

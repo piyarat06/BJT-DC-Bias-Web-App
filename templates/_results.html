@@ -1,0 +1,28 @@
+{% if result %}
+  {% for w in result.warnings %}
+  <div class="warning" role="alert">⚠️ {{ w }}</div>
+  {% endfor %}
+
+  <section class="results">
+    <h2>DC Bias Results</h2>
+    <p class="region region-{{ result.region }}">
+      Operating region: <strong>{{ result.region }}</strong>
+    </p>
+    <table>
+      <thead>
+        <tr><th>ค่า</th><th>ผลลัพธ์</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>VTH (Thevenin voltage)</td><td>{{ "%.3f"|format(result.vth) }} V</td></tr>
+        <tr><td>RTH (Thevenin resistance)</td><td>{{ "%.3f"|format(result.rth / 1000) }} kΩ</td></tr>
+        <tr><td>IB (base current)</td><td>{{ "%.3f"|format(result.ib * 1e6) }} µA</td></tr>
+        <tr><td>IC (collector current)</td><td>{{ "%.3f"|format(result.ic * 1000) }} mA</td></tr>
+        <tr><td>IE (emitter current)</td><td>{{ "%.3f"|format(result.ie * 1000) }} mA</td></tr>
+        <tr><td>VE (emitter voltage)</td><td>{{ "%.3f"|format(result.ve) }} V</td></tr>
+        <tr><td>VB (base voltage)</td><td>{{ "%.3f"|format(result.vb) }} V</td></tr>
+        <tr><td>VC (collector voltage)</td><td>{{ "%.3f"|format(result.vc) }} V</td></tr>
+        <tr><td>VCE (collector-emitter)</td><td>{{ "%.3f"|format(result.vce) }} V</td></tr>
+      </tbody>
+    </table>
+  </section>
+{% endif %}

@@ -2,11 +2,16 @@
 
 Web layer only — every engineering equation lives in dc_bias.py.
 Form units: voltages in V, resistances in kΩ, beta unitless.
+
+Pages:
+  /  → voltage-divider bias       (POST /calculate)
+  /fixed → fixed bias              (POST /calculate-fixed)
+  /emitter → emitter-feedback bias (POST /calculate-emitter)
 """
 
 from flask import Flask, render_template, request
 
-from dc_bias import solve
+from dc_bias import solve, solve_emitter, solve_fixed
 
 app = Flask(__name__)
 
@@ -21,10 +26,21 @@ DEFAULTS = {
     "vbe": 0.70,
 }
 
+# The two extra circuits are designed to stay comfortably forward-active.
+FIXED_DEFAULTS = {
+    "vcc": 12.0,
+    "rb": 470.0,
+    "rc": 2.2,
+    "beta": 100.0,
+    "vbe": 0.70,
+}
+EMITTER_DEFAULTS = {**FIXED_DEFAULTS, "re": 1.0}
+
 LABELS = {
     "vcc": "VCC",
     "r1": "R1",
     "r2": "R2",
+    "rb": "RB",
     "rc": "RC",
     "re": "RE",
     "beta": "β",
@@ -32,16 +48,18 @@ LABELS = {
 }
 
 FORM_FIELDS = ("vcc", "r1", "r2", "rc", "re", "beta", "vbe")
+FORM_FIELDS_FIXED = ("vcc", "rb", "rc", "beta", "vbe")
+FORM_FIELDS_EMITTER = ("vcc", "rb", "rc", "re", "beta", "vbe")
 
 
-def parse_form(form):
-    """Convert every form field to float (form units, kΩ not yet converted).
+def parse_form(form, fields):
+    """Convert the named form fields to float (form units, kΩ not yet converted).
 
     Raises ValueError with a Thai message when a field is missing,
     empty, or not a number.
     """
     values = {}
-    for name in FORM_FIELDS:
+    for name in fields:
         raw = (form.get(name) or "").strip()
         try:
             values[name] = float(raw)
@@ -52,14 +70,14 @@ def parse_form(form):
 
 @app.route("/")
 def index():
-    return render_template("index.html", defaults=DEFAULTS)
+    return render_template("index.html", defaults=DEFAULTS, circuit="divider")
 
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
     entered = {name: (request.form.get(name) or "") for name in FORM_FIELDS}
     try:
-        values = parse_form(request.form)
+        values = parse_form(request.form, FORM_FIELDS)
         result = solve(
             vcc=values["vcc"],
             r1=values["r1"] * 1000.0,   # kΩ -> Ω
@@ -71,9 +89,70 @@ def calculate():
         )
     except ValueError as exc:
         return render_template(
-            "index.html", defaults=DEFAULTS, error=str(exc), entered=entered
+            "index.html", defaults=DEFAULTS, circuit="divider",
+            error=str(exc), entered=entered
         )
-    return render_template("index.html", defaults=DEFAULTS, result=result, entered=entered)
+    return render_template(
+        "index.html", defaults=DEFAULTS, circuit="divider",
+        result=result, entered=entered
+    )
+
+
+@app.route("/fixed")
+def fixed_page():
+    return render_template("fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed")
+
+
+@app.route("/calculate-fixed", methods=["POST"])
+def calculate_fixed():
+    entered = {name: (request.form.get(name) or "") for name in FORM_FIELDS_FIXED}
+    try:
+        values = parse_form(request.form, FORM_FIELDS_FIXED)
+        result = solve_fixed(
+            vcc=values["vcc"],
+            rb=values["rb"] * 1000.0,   # kΩ -> Ω
+            rc=values["rc"] * 1000.0,
+            beta=values["beta"],
+            vbe=values["vbe"],
+        )
+    except ValueError as exc:
+        return render_template(
+            "fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed",
+            error=str(exc), entered=entered
+        )
+    return render_template(
+        "fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed",
+        result=result, entered=entered
+    )
+
+
+@app.route("/emitter")
+def emitter_page():
+    return render_template("emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter")
+
+
+@app.route("/calculate-emitter", methods=["POST"])
+def calculate_emitter():
+    entered = {name: (request.form.get(name) or "") for name in FORM_FIELDS_EMITTER}
+    try:
+        values = parse_form(request.form, FORM_FIELDS_EMITTER)
+        result = solve_emitter(
+            vcc=values["vcc"],
+            rb=values["rb"] * 1000.0,   # kΩ -> Ω
+            rc=values["rc"] * 1000.0,
+            re=values["re"] * 1000.0,
+            beta=values["beta"],
+            vbe=values["vbe"],
+        )
+    except ValueError as exc:
+        return render_template(
+            "emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter",
+            error=str(exc), entered=entered
+        )
+    return render_template(
+        "emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter",
+        result=result, entered=entered
+    )
 
 
 if __name__ == "__main__":

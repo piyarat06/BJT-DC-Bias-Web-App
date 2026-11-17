@@ -23,6 +23,31 @@ h1 { color: #103658; margin: 0 0 4px; font-size: 1.6rem; }
 
 .subtitle { color: #546d83; margin-top: 0; font-size: 0.95rem; }
 
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+
+.nav a {
+  padding: 6px 12px;
+  border: 1px solid #b9cddd;
+  border-radius: 999px;
+  color: #155a78;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.nav a:hover { background: #e6f1fa; }
+
+.nav a.active {
+  background: #0c8078;
+  border-color: #0c8078;
+  color: #ffffff;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
