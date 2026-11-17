@@ -32,16 +32,16 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผล (หลังเพิ่ม Fixed/Emitter): **Ran 36 tests — OK (ผ่านทั้งหมด)**
+ผล (หลังเพิ่ม Fixed/Emitter + code review fix): **Ran 37 tests — OK (ผ่านทั้งหมด)**
 - `tests/test_dc_bias.py` — 17 tests: ค่าอ้างอิง 9 ค่าของ Voltage-Divider,
   ตัวเลขสุดขั้ว (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
   ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation **+ 8 tests
  ของ Fixed/Emitter** (ค่าอ้างอิง 2 วงจร, cutoff 2, saturation 2, validate RB/RE, inf/NaN)
-- `tests/test_web.py` — 19 tests ผ่าน Flask test client: GET / ฟอร์มครบ
+- `tests/test_web.py` — 20 tests ผ่าน Flask test client: GET / ฟอร์มครบ
   7 ช่อง, POST คำนวณจริง, ค่าติดลบ, ค่าไม่ใช่ตัวเลข, ค่า inf (1e309),
   ช่องว่าง, ค่ามีช่องว่างรอบตัวเลข, warning cutoff และ saturation
-  แสดงบนหน้าเว็บ **+ 10 tests ของ 3 หน้า** (GET /fixed, /emitter, POST ผลจริง,
-  ลิงก์สลับหน้า, RB ติดลบ/ว่าง, inf, cutoff, saturation)
+  แสดงบนหน้าเว็บ **+ 11 tests ของ 3 หน้า** (GET /fixed, /emitter, POST ผลจริง,
+  ลิงก์สลับหน้า, RB ติดลบ/ว่าง, inf, cutoff, saturation, ค่าที่กรอกค้างหลัง error)
 
 ## 3. การทดลองบน Browser จริง (http://127.0.0.1:5000/)
 
@@ -57,9 +57,9 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 ## 4. Reproducibility
 
 สร้าง venv ใหม่ทั้งหมด (`.venv-verify`) → `pip install -r requirements.txt`
-→ รัน tests → 36/36 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
+→ รัน tests → 37/37 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
 README ได้ผลเหมือนกัน (เกณฑ์ A7) — ตรวจซ้ำหลังแก้ปัญหาจาก code review
-และหลังเพิ่ม Fixed/Emitter Bias (มี tests เพิ่มเป็น 36 ตัว) ก่อนส่งมอบ
+และหลังเพิ่ม Fixed/Emitter Bias (มี tests เพิ่มเป็น 37 ตัว) ก่อนส่งมอบ
 
 ## 5. ข้อจำกัดของแบบจำลอง
 
@@ -94,4 +94,4 @@ RB = −5 → `RB ต้องมากกว่า 0` · RB ว่าง → `R
 `vcc = 1e309` → `VCC ต้องเป็นจำนวนจำกัด` · VCC=0.5 V → Cutoff warning ·
 RB=10 kΩ → Saturation warning — ทุกกรณี HTTP 200 หน้าไม่ล้ม
 
-จำนวน tests รวมหลังส่วนต่อขยาย: **36 tests (17 unit + 19 HTTP) — OK**
+จำนวน tests รวมหลังส่วนต่อขยาย: **37 tests (17 unit + 20 HTTP) — OK**

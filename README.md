@@ -29,7 +29,7 @@ BJT DC Bias Web App/
 ├── static/style.css        # การแสดงผล
 ├── tests/
 │   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (17 tests)
-│   └── test_web.py         # Flask HTTP tests ผ่าน test client (19 tests)
+│   └── test_web.py         # Flask HTTP tests ผ่าน test client (20 tests)
 ├── requirements.txt        # flask>=3.0
 ├── README.md               # เอกสารนี้
 ├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent
@@ -82,8 +82,8 @@ python -m flask --app app run --debug
 python -m unittest discover -s tests -v
 ```
 
-ผลที่คาดหวัง: `Ran 36 tests ... OK`
-(test_dc_bias 17 ตัว + test_web 19 ตัว)
+ผลที่คาดหวัง: `Ran 37 tests ... OK`
+(test_dc_bias 17 ตัว + test_web 20 ตัว)
 
 ## ข้อมูลทดลองอ้างอิง
 
@@ -106,7 +106,7 @@ VCE = 8.052 V (forward-active)
 | A3 · Engineering reference | ผลตรงการคำนวณมืออิสระ | `test_dc_bias.py::test_solve_reference_values` |
 | A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/inf/NaN/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
 | A5 · Region warnings | Cutoff/Saturation แสดง Warning | `test_dc_bias.py::TestRegionWarnings`, `test_web.py::test_*_warning_displayed` |
-| A6 · Tests | 17 unit + 19 HTTP = 36 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
+| A6 · Tests | 17 unit + 20 HTTP = 37 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
 | A7 · Reproducibility | clone → ติดตั้ง → รัน → tests ตาม README นี้ | ขั้นตอนด้านบน |
 | ส่วนต่อขยาย · Solver | Fixed/Emitter ตรงค่าคำนวณมือ + validation + cutoff/saturation | `test_dc_bias.py::TestFixedEmitter` |
 | ส่วนต่อขยาย · 3 หน้า | GET/POST ทั้ง 3 วงจร, แถบลิงก์, error/warning จริง | `test_web.py::TestFixedEmitterWeb` |

@@ -24,27 +24,27 @@
     <div class="grid">
       <label>VCC (V)
         <input type="number" step="any" inputmode="decimal" name="vcc"
-               value="{{ entered.vcc if entered and entered.vcc else defaults.vcc }}" required>
+               value="{{ entered.get('vcc', defaults.vcc) if entered is defined else defaults.vcc }}" required>
       </label>
       <label>RB (kΩ)
         <input type="number" step="any" inputmode="decimal" name="rb"
-               value="{{ entered.rb if entered and entered.rb else defaults.rb }}" required>
+               value="{{ entered.get('rb', defaults.rb) if entered is defined else defaults.rb }}" required>
       </label>
       <label>RC (kΩ)
         <input type="number" step="any" inputmode="decimal" name="rc"
-               value="{{ entered.rc if entered and entered.rc else defaults.rc }}" required>
+               value="{{ entered.get('rc', defaults.rc) if entered is defined else defaults.rc }}" required>
       </label>
       <label>RE (kΩ)
         <input type="number" step="any" inputmode="decimal" name="re"
-               value="{{ entered.re if entered and entered.re else defaults.re }}" required>
+               value="{{ entered.get('re', defaults.re) if entered is defined else defaults.re }}" required>
       </label>
       <label>β (hFE)
         <input type="number" step="any" inputmode="decimal" name="beta"
-               value="{{ entered.beta if entered and entered.beta else defaults.beta }}" required>
+               value="{{ entered.get('beta', defaults.beta) if entered is defined else defaults.beta }}" required>
       </label>
       <label>VBE (V)
         <input type="number" step="any" inputmode="decimal" name="vbe"
-               value="{{ entered.vbe if entered and entered.vbe else defaults.vbe }}" required>
+               value="{{ entered.get('vbe', defaults.vbe) if entered is defined else defaults.vbe }}" required>
       </label>
     </div>
     <button type="submit">Calculate DC Bias</button>

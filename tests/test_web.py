@@ -123,6 +123,12 @@ class TestFixedEmitterWeb(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("RB ต้องเป็นตัวเลข", resp.data.decode("utf-8"))
 
+    def test_post_error_repopulates_entered_value(self):
+        resp = self.client.post("/calculate-fixed", data=dict(FIXED_FORM, rb=""))
+        text = resp.data.decode("utf-8")
+        self.assertRegex(text, r'name="rb"\s+value=""')  # blank stays blank, not default 470
+        self.assertRegex(text, r'name="vcc"\s+value="12"')  # other fields keep what was sent
+
     def test_post_emitter_non_finite_vcc(self):
         resp = self.client.post("/calculate-emitter", data=dict(EMITTER_FORM, vcc="1e309"))
         text = resp.data.decode("utf-8")
