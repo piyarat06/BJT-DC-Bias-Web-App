@@ -3,13 +3,13 @@
 Web layer only — every engineering equation lives in dc_bias.py.
 Form units: voltages in V, resistances in kΩ, beta unitless.
 
-Pages:
-  /  → voltage-divider bias       (POST /calculate)
-  /fixed → fixed bias              (POST /calculate-fixed)
-  /emitter → emitter-feedback bias (POST /calculate-emitter)
+One page at / holds all three circuits as collapsible sections:
+  /  → Voltage-Divider (POST /calculate), Fixed (POST /calculate-fixed),
+       Emitter (POST /calculate-emitter)
+  /fixed and /emitter redirect to /?circuit=... for old bookmarks.
 """
 
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request
 
 from dc_bias import solve, solve_emitter, solve_fixed
 
@@ -36,6 +36,9 @@ FIXED_DEFAULTS = {
 }
 EMITTER_DEFAULTS = {**FIXED_DEFAULTS, "re": 1.0}
 
+# All form fields on the single page read from one defaults map.
+ALL_DEFAULTS = {**DEFAULTS, **FIXED_DEFAULTS}
+
 LABELS = {
     "vcc": "VCC",
     "r1": "R1",
@@ -50,6 +53,8 @@ LABELS = {
 FORM_FIELDS = ("vcc", "r1", "r2", "rc", "re", "beta", "vbe")
 FORM_FIELDS_FIXED = ("vcc", "rb", "rc", "beta", "vbe")
 FORM_FIELDS_EMITTER = ("vcc", "rb", "rc", "re", "beta", "vbe")
+
+CIRCUITS = ("divider", "fixed", "emitter")
 
 
 def parse_form(form, fields):
@@ -70,7 +75,10 @@ def parse_form(form, fields):
 
 @app.route("/")
 def index():
-    return render_template("index.html", defaults=DEFAULTS, circuit="divider")
+    circuit = request.args.get("circuit", "divider")
+    if circuit not in CIRCUITS:
+        circuit = "divider"
+    return render_template("index.html", defaults=ALL_DEFAULTS, circuit=circuit)
 
 
 @app.route("/calculate", methods=["POST"])
@@ -89,18 +97,18 @@ def calculate():
         )
     except ValueError as exc:
         return render_template(
-            "index.html", defaults=DEFAULTS, circuit="divider",
+            "index.html", defaults=ALL_DEFAULTS, circuit="divider",
             error=str(exc), entered=entered
         )
     return render_template(
-        "index.html", defaults=DEFAULTS, circuit="divider",
+        "index.html", defaults=ALL_DEFAULTS, circuit="divider",
         result=result, entered=entered
     )
 
 
 @app.route("/fixed")
 def fixed_page():
-    return render_template("fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed")
+    return redirect("/?circuit=fixed")
 
 
 @app.route("/calculate-fixed", methods=["POST"])
@@ -117,18 +125,18 @@ def calculate_fixed():
         )
     except ValueError as exc:
         return render_template(
-            "fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed",
+            "index.html", defaults=ALL_DEFAULTS, circuit="fixed",
             error=str(exc), entered=entered
         )
     return render_template(
-        "fixed.html", defaults=FIXED_DEFAULTS, circuit="fixed",
+        "index.html", defaults=ALL_DEFAULTS, circuit="fixed",
         result=result, entered=entered
     )
 
 
 @app.route("/emitter")
 def emitter_page():
-    return render_template("emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter")
+    return redirect("/?circuit=emitter")
 
 
 @app.route("/calculate-emitter", methods=["POST"])
@@ -146,11 +154,11 @@ def calculate_emitter():
         )
     except ValueError as exc:
         return render_template(
-            "emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter",
+            "index.html", defaults=ALL_DEFAULTS, circuit="emitter",
             error=str(exc), entered=entered
         )
     return render_template(
-        "emitter.html", defaults=EMITTER_DEFAULTS, circuit="emitter",
+        "index.html", defaults=ALL_DEFAULTS, circuit="emitter",
         result=result, entered=entered
     )
 

@@ -1,3 +1,4 @@
+import re
 import unittest
 from app import app
 
@@ -74,22 +75,38 @@ class TestFixedEmitterWeb(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_get_fixed_returns_form(self):
-        resp = self.client.get("/fixed")
-        self.assertEqual(resp.status_code, 200)
-        text = resp.data.decode("utf-8")
-        for field in ("vcc", "rb", "rc", "beta", "vbe"):
-            self.assertIn(f'name="{field}"', text)
-        self.assertNotIn('name="r1"', text)
-        self.assertNotIn('name="r2"', text)
-        self.assertIn("Calculate DC Bias", text)
+    def assert_open_section(self, text, title):
+        self.assertRegex(text, rf'<details[^>]*\bopen\b[^>]*>\s*<summary>{title}</summary>')
+        self.assertEqual(len(re.findall(r'<details[^>]*\bopen\b', text)), 1)
 
-    def test_get_emitter_returns_form(self):
-        resp = self.client.get("/emitter")
-        self.assertEqual(resp.status_code, 200)
-        text = resp.data.decode("utf-8")
-        for field in ("vcc", "rb", "rc", "re", "beta", "vbe"):
-            self.assertIn(f'name="{field}"', text)
+    def test_old_urls_redirect_to_single_page(self):
+        for path, location in (("/fixed", "/?circuit=fixed"), ("/emitter", "/?circuit=emitter")):
+            resp = self.client.get(path)
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(resp.headers["Location"], location)
+
+    def test_query_param_opens_requested_section(self):
+        for param, title in (("fixed", "Fixed Bias"), ("emitter", "Emitter Bias"), ("bogus", "Voltage-Divider Bias")):
+            text = self.client.get(f"/?circuit={param}").data.decode("utf-8")
+            self.assertEqual(text.count("<details"), 3)
+            self.assert_open_section(text, title)
+
+    def test_post_opens_submitted_section_and_shows_result(self):
+        cases = (
+            ("/calculate", DEFAULTS_FORM, "1.230", "Voltage-Divider Bias"),
+            ("/calculate-fixed", FIXED_FORM, "2.404", "Fixed Bias"),
+            ("/calculate-emitter", EMITTER_FORM, "1.979", "Emitter Bias"),
+        )
+        for route, form, number, title in cases:
+            text = self.client.post(route, data=form).data.decode("utf-8")
+            self.assertIn(number, text)
+            self.assert_open_section(text, title)
+
+    def test_single_page_defaults_for_all_circuits(self):
+        text = self.client.get("/").data.decode("utf-8")
+        for field, value in (("r1", "100.0"), ("r2", "22.0"), ("rb", "470.0"),
+                             ("rc", "2.2"), ("re", "1.0"), ("beta", "100.0"), ("vbe", "0.7")):
+            self.assertRegex(text, rf'name="{field}"\s+value="{re.escape(value)}"')
 
     def test_post_fixed_calculates_real_value(self):
         resp = self.client.post("/calculate-fixed", data=FIXED_FORM)
