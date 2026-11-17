@@ -106,12 +106,16 @@ class TestFixedEmitterWeb(unittest.TestCase):
         self.assertIn("1.979", text)
         self.assertIn("5.647", text)
 
-    def test_nav_links_on_all_pages(self):
-        for path in ("/", "/fixed", "/emitter"):
-            with self.subTest(path=path):
-                text = self.client.get(path).data.decode("utf-8")
-                for href in ('href="/"', 'href="/fixed"', 'href="/emitter"'):
-                    self.assertIn(href, text)
+    def test_single_page_has_three_sections(self):
+        text = self.client.get("/").data.decode("utf-8")
+        self.assertEqual(text.count("<details"), 3)
+        for title in ("Voltage-Divider Bias", "Fixed Bias", "Emitter Bias"):
+            self.assertIn(f"<summary>{title}</summary>", text)
+        for action in ("/calculate", "/calculate-fixed", "/calculate-emitter"):
+            self.assertIn(f'action="{action}"', text)
+        for field in ("vcc", "r1", "r2", "rb", "rc", "re", "beta", "vbe"):
+            self.assertIn(f'name="{field}"', text)
+        self.assertNotIn('href="/fixed"', text)  # ไม่มีแถบ nav แล้ว
 
     def test_post_fixed_invalid_rb(self):
         resp = self.client.post("/calculate-fixed", data=dict(FIXED_FORM, rb="-5"))

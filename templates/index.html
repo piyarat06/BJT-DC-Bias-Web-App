@@ -9,56 +9,144 @@
 <body>
 <main class="card">
   <h1>BJT DC Bias Calculator</h1>
-  <p class="subtitle">NPN Common Emitter · Voltage-Divider Bias ·
+  <p class="subtitle">NPN Common Emitter · Voltage-Divider / Fixed / Emitter Bias ·
     แบบจำลอง Forward-Active (β คงที่, VBE คงที่)</p>
 
-  {% include "_nav.html" %}
+  <details class="circuit" {% if circuit == 'divider' %}open{% endif %}>
+    <summary>Voltage-Divider Bias</summary>
 
-  {% if error %}
-  <div class="error" role="alert">
-    <strong>ข้อมูลไม่ถูกต้อง:</strong> {{ error }}
-  </div>
-  {% endif %}
-
-  <form method="post" action="/calculate">
-    <div class="grid">
-      <label>VCC (V)
-        <input type="number" step="any" inputmode="decimal" name="vcc"
-               value="{{ entered.get('vcc', defaults.vcc) if entered is defined else defaults.vcc }}" required>
-      </label>
-      <label>R1 (kΩ)
-        <input type="number" step="any" inputmode="decimal" name="r1"
-               value="{{ entered.get('r1', defaults.r1) if entered is defined else defaults.r1 }}" required>
-      </label>
-      <label>R2 (kΩ)
-        <input type="number" step="any" inputmode="decimal" name="r2"
-               value="{{ entered.get('r2', defaults.r2) if entered is defined else defaults.r2 }}" required>
-      </label>
-      <label>RC (kΩ)
-        <input type="number" step="any" inputmode="decimal" name="rc"
-               value="{{ entered.get('rc', defaults.rc) if entered is defined else defaults.rc }}" required>
-      </label>
-      <label>RE (kΩ)
-        <input type="number" step="any" inputmode="decimal" name="re"
-               value="{{ entered.get('re', defaults.re) if entered is defined else defaults.re }}" required>
-      </label>
-      <label>β (hFE)
-        <input type="number" step="any" inputmode="decimal" name="beta"
-               value="{{ entered.get('beta', defaults.beta) if entered is defined else defaults.beta }}" required>
-      </label>
-      <label>VBE (V)
-        <input type="number" step="any" inputmode="decimal" name="vbe"
-               value="{{ entered.get('vbe', defaults.vbe) if entered is defined else defaults.vbe }}" required>
-      </label>
+    {% if circuit == 'divider' and error %}
+    <div class="error" role="alert">
+      <strong>ข้อมูลไม่ถูกต้อง:</strong> {{ error }}
     </div>
-    <button type="submit">Calculate DC Bias</button>
-  </form>
+    {% endif %}
 
-  {% include "_results.html" %}
+    <form method="post" action="/calculate">
+      <div class="grid">
+        <label>VCC (V)
+          <input type="number" step="any" inputmode="decimal" name="vcc"
+                 value="{{ entered.get('vcc', defaults.vcc) if entered is defined else defaults.vcc }}" required>
+        </label>
+        <label>R1 (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="r1"
+                 value="{{ entered.get('r1', defaults.r1) if entered is defined else defaults.r1 }}" required>
+        </label>
+        <label>R2 (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="r2"
+                 value="{{ entered.get('r2', defaults.r2) if entered is defined else defaults.r2 }}" required>
+        </label>
+        <label>RC (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="rc"
+                 value="{{ entered.get('rc', defaults.rc) if entered is defined else defaults.rc }}" required>
+        </label>
+        <label>RE (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="re"
+                 value="{{ entered.get('re', defaults.re) if entered is defined else defaults.re }}" required>
+        </label>
+        <label>β (hFE)
+          <input type="number" step="any" inputmode="decimal" name="beta"
+                 value="{{ entered.get('beta', defaults.beta) if entered is defined else defaults.beta }}" required>
+        </label>
+        <label>VBE (V)
+          <input type="number" step="any" inputmode="decimal" name="vbe"
+                 value="{{ entered.get('vbe', defaults.vbe) if entered is defined else defaults.vbe }}" required>
+        </label>
+      </div>
+      <button type="submit">Calculate DC Bias</button>
+    </form>
+
+    {% if circuit == 'divider' %}{% include "_results.html" %}{% endif %}
+  </details>
+
+  <details class="circuit" {% if circuit == 'fixed' %}open{% endif %}>
+    <summary>Fixed Bias</summary>
+
+    {% if circuit == 'fixed' and error %}
+    <div class="error" role="alert">
+      <strong>ข้อมูลไม่ถูกต้อง:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/calculate-fixed">
+      <div class="grid">
+        <label>VCC (V)
+          <input type="number" step="any" inputmode="decimal" name="vcc"
+                 value="{{ entered.get('vcc', defaults.vcc) if entered is defined else defaults.vcc }}" required>
+        </label>
+        <label>RB (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="rb"
+                 value="{{ entered.get('rb', defaults.rb) if entered is defined else defaults.rb }}" required>
+        </label>
+        <label>RC (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="rc"
+                 value="{{ entered.get('rc', defaults.rc) if entered is defined else defaults.rc }}" required>
+        </label>
+        <label>β (hFE)
+          <input type="number" step="any" inputmode="decimal" name="beta"
+                 value="{{ entered.get('beta', defaults.beta) if entered is defined else defaults.beta }}" required>
+        </label>
+        <label>VBE (V)
+          <input type="number" step="any" inputmode="decimal" name="vbe"
+                 value="{{ entered.get('vbe', defaults.vbe) if entered is defined else defaults.vbe }}" required>
+        </label>
+      </div>
+      <button type="submit">Calculate DC Bias</button>
+    </form>
+
+    {% if circuit == 'fixed' %}{% include "_results.html" %}{% endif %}
+  </details>
+
+  <details class="circuit" {% if circuit == 'emitter' %}open{% endif %}>
+    <summary>Emitter Bias</summary>
+
+    {% if circuit == 'emitter' and error %}
+    <div class="error" role="alert">
+      <strong>ข้อมูลไม่ถูกต้อง:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/calculate-emitter">
+      <div class="grid">
+        <label>VCC (V)
+          <input type="number" step="any" inputmode="decimal" name="vcc"
+                 value="{{ entered.get('vcc', defaults.vcc) if entered is defined else defaults.vcc }}" required>
+        </label>
+        <label>RB (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="rb"
+                 value="{{ entered.get('rb', defaults.rb) if entered is defined else defaults.rb }}" required>
+        </label>
+        <label>RC (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="rc"
+                 value="{{ entered.get('rc', defaults.rc) if entered is defined else defaults.rc }}" required>
+        </label>
+        <label>RE (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="re"
+                 value="{{ entered.get('re', defaults.re) if entered is defined else defaults.re }}" required>
+        </label>
+        <label>β (hFE)
+          <input type="number" step="any" inputmode="decimal" name="beta"
+                 value="{{ entered.get('beta', defaults.beta) if entered is defined else defaults.beta }}" required>
+        </label>
+        <label>VBE (V)
+          <input type="number" step="any" inputmode="decimal" name="vbe"
+                 value="{{ entered.get('vbe', defaults.vbe) if entered is defined else defaults.vbe }}" required>
+        </label>
+      </div>
+      <button type="submit">Calculate DC Bias</button>
+    </form>
+
+    {% if circuit == 'emitter' %}{% include "_results.html" %}{% endif %}
+  </details>
 
   <footer>
-    <p>สมการอ้างอิง: VTH = VCC·R2/(R1+R2), RTH = R1·R2/(R1+R2),
+    <p>Voltage-Divider: VTH = VCC·R2/(R1+R2), RTH = R1·R2/(R1+R2),
       IB = (VTH−VBE)/(RTH+(β+1)RE), IC = β·IB, IE = (β+1)·IB,
+      VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE</p>
+    <p>Fixed Bias: VTH = VCC, RTH = RB,
+      IB = (VCC−VBE)/RB, IC = β·IB, IE = (β+1)·IB,
+      VE = 0, VB = VBE, VC = VCC−IC·RC, VCE = VC</p>
+    <p>Emitter Bias: VTH = VCC, RTH = RB,
+      IB = (VCC−VBE)/(RB+(β+1)RE), IC = β·IB, IE = (β+1)·IB,
       VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE</p>
     <p>แบบจำลอง Forward-Active — ค่าที่ออกนอกสมมติฐานจะแสดง Warning
       และไม่ควรใช้เป็นผลจำลองที่เชื่อถือได้</p>
