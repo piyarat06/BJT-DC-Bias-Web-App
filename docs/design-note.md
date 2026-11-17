@@ -23,7 +23,8 @@
 ## Non-goals (ขอบเขต Week 2 — DC เท่านั้น)
 
 - ไม่มี AC / small-signal / Bode plot / transient / signal generator
-- ไม่มี bias types อื่น (Fixed Bias, Emitter Bias = Lab W3)
+- ไม่มี bias types นอกเหนือจาก 3 แบบที่ระบุในส่วนต่อขยายด้านล่าง
+  (Voltage-Divider, Fixed, Emitter — สองแบบหลังเพิ่มเมื่อ 17 พ.ย. 2569)
 - ไม่มี SPICE/ngspice solver (Lab W4)
 - ไม่มี FET, interactive schematic, overlay animation
 - ไม่ต้องลอก UI จากภาพ concept ทุกพิกเซล
@@ -78,3 +79,21 @@ VC  = VCC − IC·RC                    VCE = VC − VE
 ## สิ่งที่เหลือให้ขั้น Build
 
 - โครงร่างไฟล์/ฟังก์ชันจริง และลำดับงาน (อยู่ใน Implementation Plan ถัดไป)
+
+## ส่วนต่อขยาย 17 พ.ย. 2569 — Fixed Bias + Emitter Bias
+
+ตามที่เจ้าของงานขอเพิ่ม ขอบเขตขยายเป็น 3 หน้าโดยยังใช้ Flask server-rendered
+และแบบจำลอง Forward-Active เดิมทุกประการ:
+
+- `/` (Voltage-Divider) อย่างเดิม · `/fixed` → POST `/calculate-fixed` ·
+  `/emitter` → POST `/calculate-emitter` · มีแถบลิงก์สลับ 3 หน้า (ไม่ใช้ JavaScript)
+- `dc_bias.py` เพิ่ม `solve_fixed(vcc, rb, rc, beta, vbe)` และ
+  `solve_emitter(vcc, rb, rc, re, beta, vbe)` โดยใช้ helper ร่วมกับ `solve()` เดิม
+- สำหรับสองวงจรใหม่: **VTH = VCC, RTH = RB** (Thevenin ของแหล่งจ่ายผ่าน RB)
+  · Fixed คือกรณี RE = 0 ของ Emitter
+  · `IB = (VTH−VBE)/(RTH+(β+1)RE)` · cutoff เมื่อ `VTH ≤ VBE`
+- ค่า default ใหม่: Fixed VCC=12 V, RB=470 kΩ, RC=2.2 kΩ, β=100, VBE=0.70 V
+  · Emitter เพิ่ม RE=1 kΩ
+- ผลอ้างอิง: Fixed IC=2.404 mA / VCE=6.711 V · Emitter IC=1.979 mA / VCE=5.647 V
+- รายละเอียดการตัดสินใจ: `docs/superpowers/specs/2026-11-17-fixed-emitter-bias-design.md`
+  · ลำดับงาน: `docs/superpowers/plans/2026-11-17-fixed-emitter-bias.md`

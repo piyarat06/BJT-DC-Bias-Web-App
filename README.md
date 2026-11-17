@@ -1,9 +1,10 @@
 # BJT DC Bias Web App — ENG29 2121 Lab 02
 
 Web Application สำหรับคำนวณ **DC Operating Point** ของวงจรขยาย
-NPN Common-Emitter แบบ **Voltage-Divider Bias** — พัฒนาด้วย Python/Flask
-ตามข้อกำหนดของวิชา ENG29 2121 (Computer Programming for Electrical
-Engineers) ภาค 2/2569 Lab 02
+NPN Common-Emitter 3 แบบ: **Voltage-Divider Bias**, **Fixed Bias** และ
+**Emitter Bias (emitter-feedback)** — พัฒนาด้วย Python/Flask ตามข้อกำหนด
+ของวิชา ENG29 2121 (Computer Programming for Electrical Engineers)
+ภาค 2/2569 Lab 02 (สองวงจรหลังเป็นส่วนต่อขยายเมื่อ 17 พ.ย. 2569)
 
 ## สมมติฐานการคำนวณ
 
@@ -17,13 +18,18 @@ forward-active region** (Cutoff: VTH ≤ VBE หรือ Saturation: VCE < 0.2 
 
 ```
 BJT DC Bias Web App/
-├── app.py                  # Flask routes: GET / และ POST /calculate (parse + แปลงหน่วย kΩ→Ω)
-├── dc_bias.py              # engineering module: สมการ DC bias + validation + region (ไม่รู้จัก HTML/HTTP)
-├── templates/index.html    # ฟอร์มอินพุต + ตารางผลลัพธ์ (Jinja2)
+├── app.py                  # Flask routes 3 หน้า (GET / , /fixed , /emitter + POST /calculate*)
+├── dc_bias.py              # engineering module: solve/solve_fixed/solve_emitter + validation + region (ไม่รู้จัก HTML/HTTP)
+├── templates/
+│   ├── index.html          # ฟอร์ม Voltage-Divider Bias
+│   ├── fixed.html          # ฟอร์ม Fixed Bias
+│   ├── emitter.html        # ฟอร์ม Emitter Bias
+│   ├── _nav.html           # แถบลิงก์สลับ 3 วงจร (include ร่วม)
+│   └── _results.html       # warning + region + ตารางผล 9 ค่า (include ร่วม)
 ├── static/style.css        # การแสดงผล
 ├── tests/
-│   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (9 tests)
-│   └── test_web.py         # Flask HTTP tests ผ่าน test client (9 tests)
+│   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (17 tests)
+│   └── test_web.py         # Flask HTTP tests ผ่าน test client (19 tests)
 ├── requirements.txt        # flask>=3.0
 ├── README.md               # เอกสารนี้
 ├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent
@@ -54,8 +60,19 @@ python -m pip install -r requirements.txt
 python -m flask --app app run --debug
 ```
 
-4. เปิด browser ไปที่ **http://127.0.0.1:5000/** → กรอกค่า → กด
-   **Calculate DC Bias**
+4. เปิด browser เลือกวงจรจากแถบลิงก์ด้านบน:
+
+| หน้า | ฟอร์ม | Route POST | ค่า default |
+|---|---|---|---|
+| **http://127.0.0.1:5000/** | VCC, R1, R2, RC, RE, β, VBE | `/calculate` | 12 V, 100 kΩ, 22 kΩ, 2.2 kΩ, 1 kΩ, 100, 0.70 V |
+| **http://127.0.0.1:5000/fixed** | VCC, RB, RC, β, VBE | `/calculate-fixed` | 12 V, RB 470 kΩ, RC 2.2 kΩ, 100, 0.70 V |
+| **http://127.0.0.1:5000/emitter** | VCC, RB, RC, RE, β, VBE | `/calculate-emitter` | 12 V, RB 470 kΩ, RC 2.2 kΩ, RE 1 kΩ, 100, 0.70 V |
+
+กรอกค่าแล้วกด **Calculate DC Bias** — ผลลัพธ์แสดงเป็นตารางพร้อม region
+
+สมการของ Fixed Bias: `IB = (VCC−VBE)/RB`, `VE = 0`, `VCE = VC`
+ของ Emitter Bias: `IB = (VCC−VBE)/(RB+(β+1)RE)`, `VE = IE·RE`
+ทั้งสองใช้ `VTH = VCC`, `RTH = RB` และเช็ค cutoff/saturation เหมือนหน้าเดิม
 
 ## การรัน Automated Tests
 
@@ -65,8 +82,8 @@ python -m flask --app app run --debug
 python -m unittest discover -s tests -v
 ```
 
-ผลที่คาดหวัง: `Ran 18 tests ... OK`
-(test_dc_bias 9 ตัว + test_web 9 ตัว)
+ผลที่คาดหวัง: `Ran 36 tests ... OK`
+(test_dc_bias 17 ตัว + test_web 19 ตัว)
 
 ## ข้อมูลทดลองอ้างอิง
 
@@ -74,6 +91,11 @@ VCC = 12 V, R1 = 100 kΩ, R2 = 22 kΩ, RC = 2.2 kΩ, RE = 1 kΩ, β = 100,
 VBE = 0.70 V → VTH = 2.164 V, RTH = 18.033 kΩ, IB = 12.299 µA,
 IC = 1.230 mA, IE = 1.242 mA, VE = 1.242 V, VB = 1.942 V, VC = 9.294 V,
 VCE = 8.052 V (forward-active)
+
+ชุดอ้างอิงวงจรใหม่ (VCC = 12 V, RB = 470 kΩ, RC = 2.2 kΩ, β = 100, VBE = 0.70 V):
+- Fixed Bias → IB = 24.043 µA, IC = 2.404 mA, VE = 0 V, VCE = 6.711 V
+- Emitter Bias (RE = 1 kΩ) → IB = 19.790 µA, IC = 1.979 mA,
+  VE = 1.999 V, VCE = 5.647 V
 
 ## การทำงานตามเกณฑ์ตรวจรับ A1–A7
 
@@ -84,8 +106,10 @@ VCE = 8.052 V (forward-active)
 | A3 · Engineering reference | ผลตรงการคำนวณมืออิสระ | `test_dc_bias.py::test_solve_reference_values` |
 | A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/inf/NaN/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
 | A5 · Region warnings | Cutoff/Saturation แสดง Warning | `test_dc_bias.py::TestRegionWarnings`, `test_web.py::test_*_warning_displayed` |
-| A6 · Tests | 9 unit + 9 HTTP = 18 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
+| A6 · Tests | 17 unit + 19 HTTP = 36 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
 | A7 · Reproducibility | clone → ติดตั้ง → รัน → tests ตาม README นี้ | ขั้นตอนด้านบน |
+| ส่วนต่อขยาย · Solver | Fixed/Emitter ตรงค่าคำนวณมือ + validation + cutoff/saturation | `test_dc_bias.py::TestFixedEmitter` |
+| ส่วนต่อขยาย · 3 หน้า | GET/POST ทั้ง 3 วงจร, แถบลิงก์, error/warning จริง | `test_web.py::TestFixedEmitterWeb` |
 
 ## หมายเหตุความปลอดภัย
 
