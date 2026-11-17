@@ -76,8 +76,12 @@ Voltage-Divider, Fixed และ Emitter Bias อยู่ในหน้าเ�
 - `circuit`: `"divider" | "fixed" | "emitter"` — ใช้เปิด `<details>` และเลือกว่าส่วนไหนแสดงผล
 - `result`, `error`, `entered`: มีค่าเฉพาะ circuit ที่เพิ่ง submit
   ส่วนอื่นใช้ `defaults` และไม่แสดง result/error
-- ฟอร์มแต่ละส่วนใช้ `entered.get('field', defaults.field) if entered is defined else defaults.field`
-  เหมือนวิธีที่แก้ไว้ใน commit `35721ed`
+- ฟอร์มแต่ละส่วนต้องอ่าน `entered` **เฉพาะ circuit ที่เพิ่ง submit** (ตามข้อก่อนหน้า)
+  โดย template ตั้ง `divider_entered` / `fixed_entered` / `emitter_entered` ให้เป็น
+  `entered` เมื่อ `circuit` ตรงกัน หรือ `{}` เมื่อไม่ตรง แล้วใช้
+  `<section>_entered.get('field', defaults.field)` — ห้ามใช้ `entered` ตรง ๆ ในทุกส่วน
+  เพราะค่าที่ส่งของวงจรหนึ่งจะหลุดไป prefill ฟอร์มอีกสองส่วน (พบจาก code review
+  17 พ.ย. 2569 และมี regression test คุม) วิธีค้างค่าหลัง error ตาม commit `35721ed` ยังเหมือนเดิม
 
 ### ไฟล์ที่เปลี่ยน
 

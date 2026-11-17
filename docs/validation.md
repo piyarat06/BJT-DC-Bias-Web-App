@@ -32,12 +32,12 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผล (หลังเพิ่ม Fixed/Emitter + รวมหน้าเดียว + code review fix): **Ran 39 tests — OK (ผ่านทั้งหมด)**
+ผล (หลังเพิ่ม Fixed/Emitter + รวมหน้าเดียว + code review fix): **Ran 40 tests — OK (ผ่านทั้งหมด)**
 - `tests/test_dc_bias.py` — 17 tests: ค่าอ้างอิง 9 ค่าของ Voltage-Divider,
   ตัวเลขสุดขั้ว (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
   ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation **+ 8 tests
  ของ Fixed/Emitter** (ค่าอ้างอิง 2 วงจร, cutoff 2, saturation 2, validate RB/RE, inf/NaN)
-- `tests/test_web.py` — 22 tests ผ่าน Flask test client: GET / ฟอร์มครบ
+- `tests/test_web.py` — 23 tests ผ่าน Flask test client: GET / ฟอร์มครบ
   7 ช่อง, POST คำนวณจริง, ค่าติดลบ, ค่าไม่ใช่ตัวเลข, ค่า inf (1e309),
   ช่องว่าง, ค่ามีช่องว่างรอบตัวเลข, warning cutoff และ saturation
   แสดงบนหน้าเว็บ **+ 13 tests ของหน้าเดียว/ส่วนต่อขยาย** (3 `<details>` ใน `/`,
@@ -59,9 +59,9 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 ## 4. Reproducibility
 
 สร้าง venv ใหม่ทั้งหมด (`.venv-verify`) → `pip install -r requirements.txt`
-→ รัน tests → 39/39 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
+→ รัน tests → 40/40 ผ่าน → ลบทิ้ง: ยืนยันว่าคนภายนอก clone repo แล้วทำตาม
 README ได้ผลเหมือนกัน (เกณฑ์ A7) — ตรวจซ้ำหลังแก้ปัญหาจาก code review
-และหลังเพิ่ม Fixed/Emitter Bias + รวมหน้าเดียว (มี tests เพิ่มเป็น 39 ตัว) ก่อนส่งมอบ
+และหลังเพิ่ม Fixed/Emitter Bias + รวมหน้าเดียว (มี tests เพิ่มเป็น 40 ตัว) ก่อนส่งมอบ
 
 ## 5. ข้อจำกัดของแบบจำลอง
 
@@ -99,4 +99,10 @@ RB = −5 → `RB ต้องมากกว่า 0` · RB ว่าง → `R
 RB=10 kΩ → Saturation warning — ทุกกรณี HTTP 200 หน้าไม่ล้ม
 (ข้อความ error/warning ค้างอยู่ใน **ส่วนที่ส่งเท่านั้น** หลังรวมหน้าเดียว)
 
-จำนวน tests รวมหลังส่วนต่อขยาย + รวมหน้าเดียว: **39 tests (17 unit + 22 HTTP) — OK**
+จำนวน tests รวมหลังส่วนต่อขยาย + รวมหน้าเดียว + code review fix:
+**40 tests (17 unit + 23 HTTP) — OK**
+
+การตรวจเพิ่มจาก code review (17 พ.ย. 2569): หลัง POST วงจรใดวงจรหนึ่งด้วยค่า
+`vcc=5, rc=3.3, beta=200, vbe=0.9` เฉพาะฟอร์มของวงจรนั้นที่ค้างค่า
+(fixed ยังค้าง `rb` ที่ส่งด้วย) — ฟอร์มอีกสองส่วนกลับไปใช้ default `12.0 / 2.2 / 100.0 / 0.7`
+ตามสเปค ผ่าน `test_post_entered_values_stay_in_submitted_section`

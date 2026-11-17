@@ -108,6 +108,23 @@ class TestFixedEmitterWeb(unittest.TestCase):
                              ("rc", "2.2"), ("re", "1.0"), ("beta", "100.0"), ("vbe", "0.7")):
             self.assertRegex(text, rf'name="{field}"\s+value="{re.escape(value)}"')
 
+    def values_for(self, text, field):
+        return re.findall(rf'name="{field}"\s+value="([^"]*)"', text)
+
+    def test_post_entered_values_stay_in_submitted_section(self):
+        submitted = {"vcc": "5", "rc": "3.3", "beta": "200", "vbe": "0.9"}
+        defaults = {"vcc": "12.0", "rc": "2.2", "beta": "100.0", "vbe": "0.7"}
+        for route, form in (("/calculate", DEFAULTS_FORM),
+                            ("/calculate-fixed", FIXED_FORM),
+                            ("/calculate-emitter", EMITTER_FORM)):
+            text = self.client.post(route, data={**form, **submitted}).data.decode("utf-8")
+            for field, value in submitted.items():
+                with self.subTest(route=route, field=field):
+                    values = self.values_for(text, field)
+                    self.assertEqual(len(values), 3)
+                    self.assertEqual(values.count(value), 1)
+                    self.assertEqual(values.count(defaults[field]), 2)
+
     def test_post_fixed_calculates_real_value(self):
         resp = self.client.post("/calculate-fixed", data=FIXED_FORM)
         self.assertEqual(resp.status_code, 200)
