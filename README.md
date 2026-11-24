@@ -1,122 +1,140 @@
-# BJT DC Bias Web App — ENG29 2121 Lab 02
+# BJT Bias & CE Amplifier Simulator — ENG29 2121 Lab 02 + Lab 04
 
-Web Application สำหรับคำนวณ **DC Operating Point** ของวงจรขยาย
-NPN Common-Emitter 3 แบบ: **Voltage-Divider Bias**, **Fixed Bias** และ
-**Emitter Bias (emitter-feedback)** — พัฒนาด้วย Python/Flask ตามข้อกำหนด
-ของวิชา ENG29 2121 (Computer Programming for Electrical Engineers)
-ภาค 2/2569 Lab 02 (สองวงจรหลังเป็นส่วนต่อขยายเมื่อ 17 พ.ย. 2569)
+Flask Web App ที่ต่อยอดจาก **Lab 02 (BJT DC Bias)** ไปเป็น **Lab 04 · BJT CE Amplifier Simulator v1**
 
-หน้าเว็บเป็น **หน้าเดียว `/` แบ่งเป็น 3 ส่วนพับได้** (`<details>`) ไม่ใช้ JavaScript:
-แต่ละส่วนมีฟอร์มและตารางผลของตัวเอง กด Calculate ส่วนไหนก็เปิดส่วนนั้น
-URL เก่า `/fixed` และ `/emitter` ยังใช้ได้ โดย redirect ไป `/?circuit=fixed`
-และ `/?circuit=emitter` (รวมหน้าเมื่อ 17 พ.ย. 2569)
+- หน้าเดียว `/` มี **3 ส่วนพับได้** สำหรับ DC Bias แบบ Analytical เดิม
+  (Voltage-Divider / Fixed / Emitter) — **ยังทำงานเหมือนเดิม 100%**
+- เพิ่มส่วน **CE Amplifier Simulator** ที่รัน **ngspice จริง** 3 โหมด:
+  `.op` (DC), `.ac` (Bode gain/phase), `.tran` (Vin/Vout ตามเวลา)
+- ผลที่แสดงมีป้ายที่มาชัดเจน: **SPICE results** แยกจาก **Analytical reference**
+  และแสดง engine/model/netlist/log ประกอบทุกครั้ง ไม่มีกราฟหรือตัวเลขฮาร์ดโคด
 
-## สมมติฐานการคำนวณ
+## สิ่งที่ใช้ / ไม่ได้ใช้
 
-ใช้ **Forward-Active Approximation**: β คงที่ (ไม่ขึ้นกับ IC) และ VBE คงที่
-(รับค่าจากผู้ใช้ ปกติ ≈ 0.7 V) โดยไม่สน effects อื่น (Early effect,
-resistance ของ junction ฯลฯ) — **ถ้าค่าที่ป้อนทำให้วงจรอยู่นอก
-forward-active region** (Cutoff: VTH ≤ VBE หรือ Saturation: VCE < 0.2 V)
-โปรแกรมจะแสดงค่าพร้อม Warning ว่าผลลัพธ์ไม่น่าเชื่อถือภายใต้แบบจำลองนี้
+ใช้: Flask + Jinja, Python `subprocess`, ngspice 47 (exe แบบ console), SVG ที่วาดจาก
+ข้อมูลที่ ngspice ส่งออกจริง (ไม่มี chart library เพิ่มเติม)
+
+ไม่ได้ใช้ (และไม่แอบอ้าง): Starter Kit จากอาจารย์ (ไม่มีไฟล์แนบ), โมเดลทรานซิสเตอร์
+เฉพาะรุ่นจากใบงาน, Impeccable skill, Playwright MCP — ดู `docs/validation.md` สำหรับ
+สถานะที่ตรวจจริง/ไม่ได้ตรวจ
 
 ## โครงสร้างไฟล์
 
 ```
-BJT DC Bias Web App/
-├── app.py                  # Flask routes หน้าเดียว (GET / + 3 POST /calculate* + redirect /fixed , /emitter)
-├── dc_bias.py              # engineering module: solve/solve_fixed/solve_emitter + validation + region (ไม่รู้จัก HTML/HTTP)
+BJT-DC-Bias-Web-App/
+├── app.py                  # Flask routes: / , 3 × /calculate* , /simulate , redirect /fixed /emitter
+├── dc_bias.py              # Lab 03 engineering: solve/solve_fixed/solve_emitter (ไม่เปลี่ยนสมการ)
+├── spice_engine.py         # Lab 04: validate → netlist → subprocess ngspice → parse raw → results+charts
 ├── templates/
-│   ├── index.html          # หน้าเดียว: 3 <details> (Voltage-Divider / Fixed / Emitter) แต่ละส่วนมีฟอร์มของตัวเอง
-│   └── _results.html       # warning + region + ตารางผล 9 ค่า (include ร่วมทุกส่วน)
-├── static/style.css        # การแสดงผล (รวม .circuit แทน .nav)
+│   ├── index.html          # 3 <details> ของ Lab 03 + <section> simulator ของ Lab 04
+│   └── _results.html       # ตารางผล Analytical (ใช้ร่วม 3 ส่วนเดิม)
+├── static/
+│   ├── style.css           # styling เดิม + simulator/chips/charts
+│   └── app.js              # วาด SVG จาก JSON ที่ server ส่งมา (ไม่คำนวณฟิสิกส์)
 ├── tests/
-│   ├── test_dc_bias.py     # unit tests สมการวิศวกรรม (17 tests)
-│   └── test_web.py         # Flask HTTP tests ผ่าน test client (23 tests)
-├── requirements.txt        # flask>=3.0
-├── README.md               # เอกสารนี้
-├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent
-└── docs/                   # design-note, validation, reflection
+│   ├── test_dc_bias.py     # 17 tests (Lab 03)
+│   ├── test_web.py         # 23 tests (Lab 03)
+│   ├── test_spice_engine.py# validation/netlist/parser + real ngspice integration
+│   └── test_simulator_web.py# /simulate route, error state, provenance, chart data
+├── requirements.txt        # flask>=3.0 (ngspice เป็นโปรแกรมภายนอก ไม่ใช่ pip package)
+├── AGENTS.md               # ข้อตกลงสำหรับ AI coding agent (อัปเดตเป็น Lab 04)
+└── docs/
+    ├── design-note.md, validation.md, reflection.md
+    └── superpowers/        # plan/spec เดิมของ Lab 03
 ```
 
-## การติดตั้งและรัน (Windows — ใช้ `py`)
+## ติดตั้งและรัน (Windows — ใช้ `py`)
 
-> บนเครื่องที่คำสั่ง `python` ถูก Microsoft Store alias ยึดไว้ ให้ใช้ `py`
-> แทน (เช่นเครื่องห้อง Lab) ทุกคำสั่งด้านล่างรันจาก **root ของ repository**
-
-1. สร้างและเปิดใช้ virtual environment:
+> เครื่องที่ `python` ถูก Microsoft Store alias ยึดไว้ ให้ใช้ `py` เพื่อสร้าง venv
+> แล้วใช้ `.venv\Scripts\python.exe` รันคำสั่งต่อไปนี้จาก root ของ repository
 
 ```powershell
 py -m venv .venv
-.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m flask --app app run --host 127.0.0.1 --port 5000
 ```
 
-2. ติดตั้ง dependencies:
+เปิด **http://127.0.0.1:5000/**
 
-```powershell
-python -m pip install -r requirements.txt
-```
+### ngspice (external engine)
 
-3. รันเว็บ (debug server สำหรับพัฒนา):
+โค้ดค้นหา engine ตามลำดับ:
 
-```powershell
-python -m flask --app app run --debug
-```
+1. environment variable `NGSPICE_EXECUTABLE` (ถ้าตั้งแต่ path ผิดจะแจ้ง error ทันที)
+2. `tools/ngspice/Spice64/bin/ngspice_con.exe` ( portable copy — ใช้เวอร์ชัน 47
+   ดาวน์โหลดจาก <https://sourceforge.net/projects/ngspice/files/ng-spice-rework/47/> )
+3. `ngspice_con` / `ngspice` จาก `PATH`
 
-4. เปิด browser ที่ **http://127.0.0.1:5000/** แล้วกดหัวข้อส่วนที่ต้องการ
-   ( Voltage-Divider / Fixed / Emitter ) เพื่อขยายฟอร์ม:
+`tools/ngspice/` ถูกกันไว้ใน `.gitignore` (ไม่ commit ไบนารี) — บนเครื่องอื่นให้ติดตั้ง
+ngspice แล้วเติมลง `PATH` หรือตั้ง `NGSPICE_EXECUTABLE`
 
-| ส่วนในหน้าเดียว `/` | ฟอร์ม | Route POST | ค่า default |
-|---|---|---|---|
-| **Voltage-Divider Bias** (`/`) | VCC, R1, R2, RC, RE, β, VBE | `/calculate` | 12 V, 100 kΩ, 22 kΩ, 2.2 kΩ, 1 kΩ, 100, 0.70 V |
-| **Fixed Bias** (`/?circuit=fixed`, `/fixed` redirect) | VCC, RB, RC, β, VBE | `/calculate-fixed` | 12 V, RB 470 kΩ, RC 2.2 kΩ, 100, 0.70 V |
-| **Emitter Bias** (`/?circuit=emitter`, `/emitter` redirect) | VCC, RB, RC, RE, β, VBE | `/calculate-emitter` | 12 V, RB 470 kΩ, RC 2.2 kΩ, RE 1 kΩ, 100, 0.70 V |
+## ใช้งาน
 
-กรอกค่าแล้วกด **Calculate DC Bias** — ผลลัพธ์แสดงเป็นตารางพร้อม region
-ใต้ส่วนที่กด (ส่วนนั้นจะเปิดอัตโนมัติ ส่วนอื่นยังพับอยู่)
+### DC Bias เดิม (Lab 03)
 
-สมการของ Fixed Bias: `IB = (VCC−VBE)/RB`, `VE = 0`, `VCE = VC`
-ของ Emitter Bias: `IB = (VCC−VBE)/(RB+(β+1)RE)`, `VE = IE·RE`
-ทั้งสองใช้ `VTH = VCC`, `RTH = RB` และเช็ค cutoff/saturation เหมือนส่วน Voltage-Divider
+กดหัวข้อ Voltage-Divider / Fixed / Emitter แล้วกด **Calculate DC Bias** ผลและ region
+แสดงใต้ส่วนที่กดเหมือนเดิม `/fixed` และ `/emitter` ยัง redirect ไป query param เดิม
 
-## การรัน Automated Tests
+### CE Amplifier Simulator (Lab 04)
 
-จาก root ของ repository (venv ยังเปิดอยู่ หรือใช้ `.venv\Scripts\python.exe`):
+เลื่อนลงไปส่วน **CE Amplifier Simulator** เลือก `DC · .op` / `AC · .ac` /
+`Transient · .tran` กรอกค่าวงจรและแหล่งสัญญาณแล้วกด **Run Simulation**
 
-```powershell
-python -m unittest discover -s tests -v
-```
-
-ผลที่คาดหวัง: `Ran 40 tests ... OK`
-(test_dc_bias 17 ตัว + test_web 23 ตัว)
-
-## ข้อมูลทดลองอ้างอิง
-
-VCC = 12 V, R1 = 100 kΩ, R2 = 22 kΩ, RC = 2.2 kΩ, RE = 1 kΩ, β = 100,
-VBE = 0.70 V → VTH = 2.164 V, RTH = 18.033 kΩ, IB = 12.299 µA,
-IC = 1.230 mA, IE = 1.242 mA, VE = 1.242 V, VB = 1.942 V, VC = 9.294 V,
-VCE = 8.052 V (forward-active)
-
-ชุดอ้างอิงวงจรใหม่ (VCC = 12 V, RB = 470 kΩ, RC = 2.2 kΩ, β = 100, VBE = 0.70 V):
-- Fixed Bias → IB = 24.043 µA, IC = 2.404 mA, VE = 0 V, VCE = 6.711 V
-- Emitter Bias (RE = 1 kΩ) → IB = 19.790 µA, IC = 1.979 mA,
-  VE = 1.999 V, VCE = 5.647 V
-
-## การทำงานตามเกณฑ์ตรวจรับ A1–A7
-
-| เกณฑ์ | สิ่งที่พิสูจน์ | ที่อยู่ |
+| ฟอร์ม | Default | หน่วย |
 |---|---|---|
-| A1 · GET / | HTTP 200 + ฟอร์มครบ 7 ช่อง | `test_web.py::test_get_index_returns_form` |
-| A2 · POST /calculate | Python คำนวณจริง ไม่มีค่าฮาร์ดโคด | `test_web.py::test_post_calculate_shows_result` |
-| A3 · Engineering reference | ผลตรงการคำนวณมืออิสระ | `test_dc_bias.py::test_solve_reference_values` |
-| A4 · Validation | R≤0/β≤0/ไม่ใช่ตัวเลข/inf/NaN/ช่องว่าง → error ไม่ล้ม | `test_dc_bias.py::TestValidation`, `test_web.py::test_post_*` |
-| A5 · Region warnings | Cutoff/Saturation แสดง Warning | `test_dc_bias.py::TestRegionWarnings`, `test_web.py::test_*_warning_displayed` |
-| A6 · Tests | 17 unit + 23 HTTP = 40 tests ผ่านหมด | คำสั่งรัน tests ด้านบน |
-| A7 · Reproducibility | clone → ติดตั้ง → รัน → tests ตาม README นี้ | ขั้นตอนด้านบน |
-| ส่วนต่อขยาย · Solver | Fixed/Emitter ตรงค่าคำนวณมือ + validation + cutoff/saturation | `test_dc_bias.py::TestFixedEmitter` |
-| ส่วนต่อขยาย · หน้าเดียว 3 ส่วน | 3 `<details>` ใน `/`, เปิดเฉพาะส่วนที่ POST, query param, redirect URL เก่า, error/warning ค้างค่า | `test_web.py::TestFixedEmitterWeb` |
+| VCC, R1, R2, RC, RE, RL | 12, 100, 22, 2.2, 1, 10 | V, kΩ |
+| CIN, COUT | 10, 10 | µF |
+| Amplitude (Vin peak), Frequency | 0.01, 1000 | V peak, Hz |
 
-## หมายเหตุความปลอดภัย
+ผลที่แสดง:
 
-- Flask debug server ใช้เฉพาะการพัฒนาบนเครื่องตัวเอง — ห้ามเปิดให้เครือข่าย
-  สาธารณะ
-- ห้าม commit `.venv/`, `__pycache__/`, `.env` (มี `.gitignore` กันไว้แล้ว)
+- **DC**: VB/VE/VC/VCE, IB/IC/IE, `i(vcc)` + region — node voltages อ่านจาก raw file
+  ส่วนกระแสอนุมานด้วยกฎของโอห์ม (มีป้าย `Derived from SPICE node voltages`)
+- **AC**: gain `|Vout/Vin|`, phase (องศา), fL/fH ที่จุด −3 dB, reference point
+  (`Vin = n_in` ก่อน Cin, `Vout = n_out` หลัง Cout) + กราฟ Bode 2 แผน
+- **Transient**: Vin/Vout peak, gain, ความสัมพันธ์เฟส (inverted), กราฟเวลา (ms) vs
+  แรงดัน (mV) — สัญญาณเปลี่ยนตาม amplitude/frequency ที่ป้อน
+- ทุกโหมด: status, engine version, model, netlist ที่ใช้รันจริง, ท้าย ngspice log
+
+ข้อผิดพลาด (engine ไม่พบ, input ผิด, run fail, timeout, raw ว่าง) → แสดง error
+**และไม่มีการแสดงผล/กราฟจากรอบเก่า**
+
+## โมเดล BJT ที่ใช้ (สำคัญ)
+
+ไม่มี Starter Kit จากอาจารย์ จึงใช้โมเดลอ้างอิงที่ระบุพารามิเตอร์ไว้ใน netlist ทุกครั้ง:
+
+```
+.MODEL QNPN NPN(IS=1e-14 BF=100 VAF=100 CJE=25p CJC=8p TF=0.4n)
+```
+
+BF=100 ใกล้เคียง β=100 ของชุดข้อมูล Lab 03 แต่ **ไม่ใช่แบบจำลอง VBE คงที่**
+จึงไม่บังคับให้ตัวเลขเท่ากันทุกหลัก ผล SPICE กับผล Analytical ต้องอ่านแยกกันเสมอ
+
+## ตัวเลขจากการรันจริงในเครื่องนี้ (ngspice 47, ค่า default)
+
+| โหมด | ผล |
+|---|---|
+| DC `.op` | VB 1.949 V, VE 1.289 V, VC 9.189 V, VCE 7.900 V, IB 11.913 µA, IC 1.278 mA, `i(vcc)` 1.378 mA |
+| AC `.ac` | Gain @1 kHz 1.75 V/V (4.86 dB), phase −179.9°, fL 2.00 Hz, fH 70.79 MHz |
+| Transient `.tran` | Vin peak 10.00 mV, Vout peak 17.49 mV, gain 1.75 V/V, inverted, หน้าต่าง 5 ms |
+
+ตัวเลข Lab 03 (Analytical) สำหรับเทียบ: VTH 2.164 V, RTH 18.033 kΩ,
+IB 12.299 µA, IC 1.230 mA, IE 1.242 mA, VE 1.242 V, VB 1.942 V,
+VC 9.294 V, VCE 8.052 V
+
+## Automated Tests
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+ผลที่คาดหวัง: **Ran 69 tests ... OK**
+(17 dc_bias + 23 web เดิม + 20 spice_engine + 9 simulator_web)
+ถ้าไม่มี ngspice การรันจริง 5–6 ตัวจะถูก `skip` อัตโนมัติ (ไม่ใช่ FAIL)
+
+## ความปลอดภัย / ข้อควรระวัง
+
+- ใช้ Flask development server เฉพาะเครื่องตัวเอง ห้ามเปิดสู่สาธารณะ
+- `subprocess.run([...], shell=False)` + `timeout=30` + temp dir ต่อรอบ
+- ตรวจ input ก่อนสร้าง netlist เสมอ ไม่มีข้อความจากฟอร์มเข้า command โดยตรง
+- ห้าม commit `.venv/`, `__pycache__/`, `.env`, `tools/ngspice/`, ไฟล์ 7z หรือ run ชั่วคราว

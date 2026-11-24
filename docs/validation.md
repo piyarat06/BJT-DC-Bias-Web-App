@@ -1,7 +1,7 @@
-# Validation Record — BJT DC Bias Web App
+# Validation Record — BJT Bias & CE Amplifier Simulator
 
-บันทึกการตรวจสอบความถูกต้องของผลการคำนวณ (ENG29 2121 · Lab 02)
-วันที่ตรวจ: 10 พฤศจิกายน 2569 · ผู้ตรวจ: นักศึกษา + AI agent
+บันทึกการตรวจสอบความถูกต้องของผลการคำนวณและผลจำลอง (ENG29 2121 · Lab 02 → Lab 04)
+วันที่ตรวจ: 10 พฤศจิกายน 2569 (Lab 02/03), 24 พฤศจิกายน 2569 (Lab 04) · ผู้ตรวจ: นักศึกษา + AI agent
 
 ## 1. ค่าอ้างอิงอิสระ (คำนวณมือ) เทียบผลจากเว็บ
 
@@ -32,7 +32,9 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผล (หลังเพิ่ม Fixed/Emitter + รวมหน้าเดียว + code review fix): **Ran 40 tests — OK (ผ่านทั้งหมด)**
+ผลรอบสุดท้าย (หลังเพิ่ม Lab 04): **Ran 69 tests — OK (ผ่านทั้งหมด)** —
+17 `test_dc_bias.py` + 23 `test_web.py` (Lab 03 เดิม 40 ตัวยังผ่าน) +
+20 `test_spice_engine.py` (รวม timeout/exit≠0/raw ว่าง) + 9 `test_simulator_web.py` (Lab 04)
 - `tests/test_dc_bias.py` — 17 tests: ค่าอ้างอิง 9 ค่าของ Voltage-Divider,
   ตัวเลขสุดขั้ว (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
   ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation **+ 8 tests
@@ -106,3 +108,55 @@ RB=10 kΩ → Saturation warning — ทุกกรณี HTTP 200 หน้า
 `vcc=5, rc=3.3, beta=200, vbe=0.9` เฉพาะฟอร์มของวงจรนั้นที่ค้างค่า
 (fixed ยังค้าง `rb` ที่ส่งด้วย) — ฟอร์มอีกสองส่วนกลับไปใช้ default `12.0 / 2.2 / 100.0 / 0.7`
 ตามสเปค ผ่าน `test_post_entered_values_stay_in_submitted_section`
+
+## 7. Lab 04 · Browser Acceptance B1–B8 (24 พฤศจิกายน 2569)
+
+**Engine จริง:** `ngspice-47` (console binary `ngspice_con.exe`, portable copy ใน
+`tools/ngspice/Spice64/bin/`) · **BJT model จริง:** `.MODEL QNPN NPN(IS=1e-14 BF=100 VAF=100 CJE=25p CJC=8p TF=0.4n)`
+· **Server:** `http://127.0.0.1:5000/` (Flask dev server, เปิดใหม่หลังแก้ template)
+
+**เครื่องมือที่ใช้จริง:** OpenCode **in-app browser** (`tabs.open/navigate`,
+`snapshot`, `fill`, `check`, `press Enter`, `evaluate`, `screenshot`) — **ไม่ได้ใช้
+Playwright MCP** เพราะไม่มี tool ตัวนั้นใน session นี้ จึงบันทึกตามชื่อ tool ที่รันจริง
+ไม่แอบอ้างว่าเป็น Playwright
+
+| Case | Method | Input | Expected/Reference | Observed | Evidence | Status |
+|---|---|---|---|---|---|---|
+| B1 Regression | เปิด Fixed → Emitter → Divider, fill ชุด Lab 3, กด Calculate | VCC=12, RB=470, RC=2.2, β=100, VBE=0.7 (+RE=1 สำหรับ Emitter) | IC/VCE ตรงตารางในข้อ 6 | Fixed IC 2.404 mA, VCE 6.711 V · Emitter IC 1.979 mA, VCE 5.647 V · Divider IC 1.230 mA, VCE 8.052 V · ทั้งสาม `forward_active` | browser snapshot/cell text หลัง POST `/calculate-fixed`, `/calculate-emitter`, `/calculate` | PASS |
+| B2 DC SPICE | เลือก `DC · .op`, Fill ค่า reference, กด Run | VCC=12, R1=100k, R2=22k, RC=2.2k, RE=1k, RL=10k, Cin=Cout=10µF, 10 mV/1 kHz | VB/VE/VC/VCE/IC จาก ngspice พร้อม model และ run status | VB 1.949 V · VE 1.289 V · VC 9.189 V · VCE 7.900 V · IC 1.278 mA · `Simulation status: success` · `Model: QNPN · … BF=100` · heading `ngspice 47 · DC` | ตารางผล + netlist/log ที่โชว์บนหน้า (log มี `ngspice-47`) | PASS |
+| B3 Change RE | เปลี่ยนเฉพาะ `sim_re=2` แล้ว Run DC ซ้ำ | เหมือน B2 แต่ RE=2 kΩ | Operating point ต้องเปลี่ยน ไม่ใช่ค่าค้าง | netlist เปลี่ยนเป็น `RE n_e 0 2k` · VB 1.949→2.048 V · VE 1.289→1.405 V · IC 1.278→0.696 mA · VCE 7.900→9.065 V | ข้อความ netlist + ตารางก่อน/หลังจาก browser | PASS |
+| B4 AC | เลือก `AC · .ac`, กด Run, อ่านกราฟ | ค่า reference, sweep 1 Hz–1 GHz | แกน Frequency (Hz), gain V/V, phase องศา, ข้อมูลจาก run จริง | Gain @1 kHz 1.75 V/V (4.86 dB), phase −179.9°, fL 2.00 Hz, fH 70.79 MHz · 2 SVG · 181 points/series · axis `Frequency (Hz)` / `Gain \|Vout/Vin\| (V/V)` / `Phase (degree)` | `sim-plot-data` (JSON array จาก server) + `svg` 2 อัน + log `.AC DEC 20 1 1G` | PASS |
+| B5 Transient | เลือก `Transient · .tran`, Run ที่ 10 mV peak/1 kHz | amplitude=0.01, frequency=1000 | Vin/Vout ตามเวลา, มีหน่วย, สัญญาณกลับเฟส | Vin peak 10.00 mV · Vout peak 17.49 mV · gain 1.75 · `Phase relation: inverted` · axis Time (ms) / Voltage (mV) · 508 points/series | SVG 1 อันมี 2 polyline + legend `Vin Vout` + ตาราง summary | PASS |
+| B6 Change Source | เปลี่ยน amplitude 0.01→0.03 แล้ว Run .tran; เปลี่ยน frequency 1000→5000 แล้ว Run ซ้ำ | amplitude/frequency ตามข้อความ | waveform/หน้าต่างเวลาต้องเปลี่ยนตาม input | amplitude: Vin 10.00→30.00 mV, Vout 17.49→52.48 mV, netlist `SIN(0 0.03 1000 0 0)` · frequency: window 5.000→1.000 ms, `SIN(0 0.01 5000 0 0)`, `.TRAN 2e-06 0.001` | ค่า input/netlist/summary ที่อ่านจากหน้าเว็บ 2 รอบ | PASS |
+| B7 Invalid / Fail | ใส่ `sim_re=0` แล้ว Run | RE=0 | แจ้ง error, ไม่โชว์ success/กราฟเก่า | `การจำลองไม่สำเร็จ: RE ต้องมากกว่า 0` · `Simulation status: error` · ไม่มี `sim-plot-data` · ไม่มีตารางผล · ค่า RE=0 ค้างในฟอร์ม | browser snapshot หลัง POST `/simulate` | PASS |
+| B8 UI | เปิด desktop full page และ iframe กว้าง 390 px (phone-width) แล้วสลับโหมด | AC results เหมือน B4 | กราฟ/หน่วย/ปุ่มอ่านง่าย ไม่ตัดเนื้อหา | desktop: chart SVG เต็มคอลัมน์ · mobile: viewport 368 px, `scrollWidth=368`, ไม่มี horizontal overflow, SVG กว้าง 284 px, ปุ่ม Run กว้าง 175 px อยู่ในจอ, mode=ac, status success | `docs/screenshots/B8-desktop-ac.png`, `docs/screenshots/B8-mobile-390.png` | PASS* |
+
+\* B8 ใช้ **iframe ความกว้าง 390 CSS px ใน browser จริง** เพราะชุด browser tool ไม่มี
+viewport/device emulation; ไม่ได้ทดสอบบนเครื่องโทรศัพท์จริง จึงไม่กล่าวอ้างว่าเป็น physical device test
+
+Status `running` ก็ตรวจใน browser จริง: หลังส่ง submit event สถานะเปลี่ยนจาก
+`Simulation status: success` → `Simulation status: running…` ก่อนที่ response จะมาถึง
+(ต่อมาจะถูก render ใหม่เป็น success/error จาก server)
+
+### หลักฐานว่ากราฟไม่ใช่ mock/hard-code
+
+- ข้อมูลกราฟถูกส่งจาก server เป็น `<script id="sim-plot-data" type="application/json">`
+  โดย parse มาจาก raw file ของ ngspice รอบนั้น (`analyze_ac`/`analyze_tran` ใน `spice_engine.py`)
+- หน้าเว็บแสดง **netlist ที่ใช้รันจริง** และท้าย log ทุกครั้ง; เปลี่ยน RE/amplitude/frequency
+  แล้ว netlist, summary และจุดกราฟเปลี่ยนตาม (B3/B6)
+- เมื่อ input ผิด (B7) ไม่มี script กราฟและไม่มีตารางผลเลย ไม่มีการใช้ผลรอบเก่า
+- **Issue ที่พบและแก้ไขระหว่างตรวจ B4:** ตอนแรก template ส่ง JSON เป็น object
+  `{"charts": [...]}` ขณะที่ `static/app.js` คาด array → หน้าแสดงข้อความ
+  `ไม่สามารถวาดกราฟจากข้อมูลที่ส่งมาได้` แม้ตัวเลขถูกต้อง แก้โดยส่ง array ตรงๆ
+  และอัปเดต `tests/test_simulator_web.py` ให้ตรวจ shape นั้น แล้ว restart server
+  และรัน B4 ใหม่จน SVG แสดง 2 อัน (PASS)
+
+### ข้อจำกัด / สิ่งที่ยังไม่ทำ
+
+- ไม่มี Starter Kit หรือโมเดลทรานซิสเตอร์จากอาจารย์ → ใช้ generic `QNPN` ตามที่ระบุข้างบน
+  ผลจึงไม่ควรเทียบหลักกับผล Analytical `VBE=0.7 V` แบบ constant-VBE ของ Lab 03
+- Scope Lab 04 v1 เฉพาะ CE Voltage-Divider; ยังไม่มี circuit editor, emitter bypass,
+  FET, หรือ AC ของทุก bias mode
+- ใช้ `git.exe` ที่มาพร้อม GitHub Desktop (ไม่ได้ติดตั้ง Git แยก) ในการ init/commit/push
+  ไปยัง `https://github.com/piyarat06/BJT-DC-Bias-Web-App` — commit SHA ตามท้ายบันทึกนี้
+- `tools/ngspice/` และ `.venv/` ถูก ignore ไม่ได้ commit ไบนารี/virtualenv ลง repo

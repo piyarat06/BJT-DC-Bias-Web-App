@@ -137,6 +137,94 @@ footer {
   font-size: 0.85rem;
 }
 
+/* Lab 04 — CE amplifier simulator */
+.simulator {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 3px solid #0c8078;
+}
+
+.simulator h2 { font-size: 1.35rem; }
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: #e9f6f2;
+  color: #11695e;
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.status-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+
+.chip {
+  background: #eef4f9;
+  border: 1px solid #cddfe9;
+  color: #174867;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.chip-ok { background: #e9f6f2; border-color: #a7d4c6; color: #12695e; }
+.chip-error { background: #fdeceb; border-color: #e3b3ae; color: #7b241c; }
+
+.sim-modes {
+  border: 1px solid #d3e0ec;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 0 0 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.sim-modes legend { font-weight: 700; color: #155a78; padding: 0 6px; }
+.sim-modes label { flex-direction: row; align-items: center; gap: 7px; }
+.sim-modes input { margin: 0; width: 16px; height: 16px; }
+.sim-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.sim-results { border-top: 1px solid #e2ebf3; }
+.sim-results h3 { color: #113c60; font-size: 1.05rem; margin-top: 22px; }
+.sim-results h4 { color: #155a78; font-size: 0.92rem; margin: 18px 0 6px; }
+
+.provenance {
+  background: #eaf6f2;
+  border-left: 4px solid #0c8078;
+  padding: 9px 13px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9rem;
+}
+
+.notes { color: #405d73; font-size: 0.88rem; padding-left: 1.3em; }
+.notes li { margin-bottom: 4px; }
+
+.scroll { overflow-x: auto; }
+.code-wrap { max-height: 260px; overflow: auto; }
+.code {
+  background: #f4f8fb;
+  border: 1px solid #d3e0ec;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.charts { display: grid; gap: 18px; }
+.chart-card { border: 1px solid #d3e0ec; border-radius: 8px; padding: 12px; background: #fbfdfe; }
+.chart-card h4 { margin: 0 0 6px; color: #113c60; }
+.chart-card svg { display: block; width: 100%; height: auto; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.82rem; color: #405d73; }
+.chart-legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; background: var(--line-color); }
+
 @media (max-width: 560px) {
   .card { margin: 10px; padding: 18px; }
+  .status-row { gap: 6px; }
+  .chip { font-size: 0.75rem; }
+  .sim-modes { gap: 12px; }
 }

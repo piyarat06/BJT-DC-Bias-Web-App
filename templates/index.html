@@ -141,6 +141,138 @@
     {% if circuit == 'emitter' %}{% include "_results.html" %}{% endif %}
   </details>
 
+  {% set sim_values = sim_entered if sim_entered is defined else {} %}
+  <section class="simulator" aria-labelledby="sim-title">
+    <h2 id="sim-title">CE Amplifier Simulator
+      <span class="badge">Lab 04 · ngspice DC / AC / Transient</span>
+    </h2>
+    <p class="subtitle">วงจร Common-Emitter แบบ Voltage-Divider อ้างอิง — ผลทั้งหมดมาจากการรัน
+      ngspice จริง แยกจากค่าคำนวณแบบประมาณของ Lab 3 ด้านบน</p>
+
+    <div class="status-row">
+      <span class="chip">Engine: {{ sim_engine or 'ไม่พร้อม' }}</span>
+      <span class="chip">Model: {{ sim_model }}</span>
+      <span class="chip {% if sim is defined and sim %}chip-ok{% elif sim_error is defined and sim_error %}chip-error{% endif %}"
+            id="sim-status">
+        {% if sim is defined and sim %}Simulation status: {{ sim.status }}
+        {% elif sim_error is defined and sim_error %}Simulation status: error
+        {% else %}Simulation status: ready{% endif %}
+      </span>
+    </div>
+
+    {% if not sim_engine %}
+    <div class="error" role="alert">
+      <strong>Engine ไม่พร้อม:</strong> ไม่พบ ngspice — ติดตั้งหรือตั้งค่า
+      <code>NGSPICE_EXECUTABLE</code> ก่อนรัน จะไม่มีการแสดงกราฟหรือผลสำเร็จปลอม
+    </div>
+    {% endif %}
+
+    {% if sim_error is defined and sim_error %}
+    <div class="error" role="alert">
+      <strong>การจำลองไม่สำเร็จ:</strong> {{ sim_error }}
+    </div>
+    {% endif %}
+
+    {% if sim is defined and sim and sim.warnings %}
+    <div class="warning" role="status">
+      {% for message in sim.warnings %}<p>{{ message }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/simulate" id="sim-form">
+      <fieldset class="sim-modes">
+        <legend>Analysis Mode</legend>
+        <label><input type="radio" name="mode" value="dc"
+                      {% if sim_mode is not defined or sim_mode == 'dc' %}checked{% endif %}> DC · .op</label>
+        <label><input type="radio" name="mode" value="ac"
+                      {% if sim_mode is defined and sim_mode == 'ac' %}checked{% endif %}> AC · .ac</label>
+        <label><input type="radio" name="mode" value="tran"
+                      {% if sim_mode is defined and sim_mode == 'tran' %}checked{% endif %}> Transient · .tran</label>
+      </fieldset>
+
+      <h3>Circuit &amp; Source Parameters</h3>
+      <div class="grid sim-grid">
+        <label>VCC (V)
+          <input type="number" step="any" inputmode="decimal" name="sim_vcc"
+                 value="{{ sim_values.get('sim_vcc', sim_defaults.sim_vcc) }}" required>
+        </label>
+        <label>R1 (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="sim_r1"
+                 value="{{ sim_values.get('sim_r1', sim_defaults.sim_r1) }}" required>
+        </label>
+        <label>R2 (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="sim_r2"
+                 value="{{ sim_values.get('sim_r2', sim_defaults.sim_r2) }}" required>
+        </label>
+        <label>RC (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="sim_rc"
+                 value="{{ sim_values.get('sim_rc', sim_defaults.sim_rc) }}" required>
+        </label>
+        <label>RE (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="sim_re"
+                 value="{{ sim_values.get('sim_re', sim_defaults.sim_re) }}" required>
+        </label>
+        <label>RL (kΩ)
+          <input type="number" step="any" inputmode="decimal" name="sim_rl"
+                 value="{{ sim_values.get('sim_rl', sim_defaults.sim_rl) }}" required>
+        </label>
+        <label>CIN (µF)
+          <input type="number" step="any" inputmode="decimal" name="sim_cin"
+                 value="{{ sim_values.get('sim_cin', sim_defaults.sim_cin) }}" required>
+        </label>
+        <label>COUT (µF)
+          <input type="number" step="any" inputmode="decimal" name="sim_cout"
+                 value="{{ sim_values.get('sim_cout', sim_defaults.sim_cout) }}" required>
+        </label>
+        <label>Amplitude · Vin peak (V)
+          <input type="number" step="any" inputmode="decimal" name="sim_amplitude"
+                 value="{{ sim_values.get('sim_amplitude', sim_defaults.sim_amplitude) }}" required>
+        </label>
+        <label>Frequency (Hz)
+          <input type="number" step="any" inputmode="decimal" name="sim_frequency"
+                 value="{{ sim_values.get('sim_frequency', sim_defaults.sim_frequency) }}" required>
+        </label>
+      </div>
+      <button type="submit" id="sim-run">Run Simulation</button>
+    </form>
+
+    {% if sim is defined and sim %}
+    <div class="results sim-results">
+      <h2>Engineering Results · {{ sim.engine }} · {{ sim.mode|upper }}</h2>
+      <p class="provenance">ผลจาก <strong>ngspice {{ sim.engine }}</strong> รอบนี้เท่านั้น —
+        ไม่ใช่ค่าฮาร์ดโคดและไม่ใช่ผล Analytical จาก <code>dc_bias.py</code></p>
+
+      <div class="scroll">
+        <table>
+          <thead><tr><th>ค่า</th><th>ผลลัพธ์จากการจำลอง</th></tr></thead>
+          <tbody>
+            {% for row in sim.summary %}
+            <tr><td>{{ row.label }}</td><td>{{ row.value }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if sim.charts %}
+      <h3>Plots · ข้อมูลจากผลรันจริง</h3>
+      <div class="charts" id="sim-charts" aria-label="Simulation plots"></div>
+      <script id="sim-plot-data" type="application/json">{{ sim.charts|tojson }}</script>
+      {% endif %}
+
+      <h3>Engine Status &amp; Provenance</h3>
+      <ul class="notes">
+        {% for note in sim.notes %}<li>{{ note }}</li>{% endfor %}
+        <li>Engine: {{ sim.engine }} · Model: {{ sim.model }}</li>
+        <li>Netlist ถูกสร้างจากค่าที่ตรวจแล้ว และรันด้วย subprocess แบบแยก working directory ต่อรอบ</li>
+      </ul>
+      <h4>Netlist ที่ใช้รันจริง</h4>
+      <div class="code-wrap"><pre class="code">{{ sim.netlist }}</pre></div>
+      <h4>ngspice log (ท้ายข้อความ)</h4>
+      <div class="code-wrap"><pre class="code">{{ sim.log_excerpt }}</pre></div>
+    </div>
+    {% endif %}
+  </section>
+
   <footer>
     <p>Voltage-Divider: VTH = VCC·R2/(R1+R2), RTH = R1·R2/(R1+R2),
       IB = (VTH−VBE)/(RTH+(β+1)RE), IC = β·IB, IE = (β+1)·IB,
@@ -155,5 +287,6 @@
       และไม่ควรใช้เป็นผลจำลองที่เชื่อถือได้</p>
   </footer>
 </main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

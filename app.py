@@ -1,17 +1,26 @@
-"""Flask application: BJT DC Bias Web App (ENG29 2121 Lab 02).
+"""Flask application: BJT Bias + CE Amplifier Simulator (ENG29 2121 Lab 02 → 04).
 
-Web layer only — every engineering equation lives in dc_bias.py.
+Web layer only — analytical equations live in dc_bias.py, ngspice work in spice_engine.py.
 Form units: voltages in V, resistances in kΩ, beta unitless.
 
 One page at / holds all three circuits as collapsible sections:
   /  → Voltage-Divider (POST /calculate), Fixed (POST /calculate-fixed),
        Emitter (POST /calculate-emitter)
   /fixed and /emitter redirect to /?circuit=... for old bookmarks.
+Lab 04 adds POST /simulate for real ngspice .op/.ac/.tran runs.
 """
 
 from flask import Flask, redirect, render_template, request
 
 from dc_bias import solve, solve_emitter, solve_fixed
+from spice_engine import (
+    MODEL_SUMMARY,
+    MODES as SIM_MODES,
+    SpiceError,
+    normalize_params,
+    resolve_engine,
+    run_simulation,
+)
 
 app = Flask(__name__)
 
@@ -55,6 +64,31 @@ FORM_FIELDS_FIXED = ("vcc", "rb", "rc", "beta", "vbe")
 FORM_FIELDS_EMITTER = ("vcc", "rb", "rc", "re", "beta", "vbe")
 
 CIRCUITS = ("divider", "fixed", "emitter")
+
+# Lab 04 simulator form (values shown in the browser; units: V, kΩ, µF, Hz).
+SIM_DEFAULTS = {
+    "sim_vcc": 12.0, "sim_r1": 100.0, "sim_r2": 22.0, "sim_rc": 2.2,
+    "sim_re": 1.0, "sim_rl": 10.0, "sim_cin": 10.0, "sim_cout": 10.0,
+    "sim_amplitude": 0.01, "sim_frequency": 1000.0,
+}
+SIM_FIELDS = tuple(SIM_DEFAULTS)
+
+
+@app.context_processor
+def inject_simulator_context():
+    """Make simulator defaults/status available to every render_template call."""
+    return {
+        "sim_defaults": SIM_DEFAULTS,
+        "sim_engine": resolve_engine(),
+        "sim_model": MODEL_SUMMARY,
+        "sim_modes": SIM_MODES,
+    }
+
+
+def _engine_params(form):
+    """Strip the sim_ prefix, then validate in the engineering adapter."""
+    raw = {name[4:]: (form.get(name) or "") for name in SIM_FIELDS}
+    return normalize_params(raw)
 
 
 def parse_form(form, fields):
@@ -160,6 +194,27 @@ def calculate_emitter():
     return render_template(
         "index.html", defaults=ALL_DEFAULTS, circuit="emitter",
         result=result, entered=entered
+    )
+
+
+@app.route("/simulate", methods=["POST"])
+def simulate():
+    """Run one real ngspice analysis and render only that run's results."""
+    entered = {name: (request.form.get(name) or "") for name in SIM_FIELDS}
+    mode = request.form.get("mode", "dc")
+    if mode not in SIM_MODES:
+        mode = "dc"
+    try:
+        params = _engine_params(request.form)
+        simulation = run_simulation(mode, params)
+    except SpiceError as exc:
+        return render_template(
+            "index.html", defaults=ALL_DEFAULTS, circuit="simulator",
+            sim_entered=entered, sim_mode=mode, sim_error=str(exc),
+        )
+    return render_template(
+        "index.html", defaults=ALL_DEFAULTS, circuit="simulator",
+        sim_entered=entered, sim_mode=mode, sim=simulation,
     )
 
 
