@@ -158,5 +158,6 @@ Status `running` ก็ตรวจใน browser จริง: หลังส�
 - Scope Lab 04 v1 เฉพาะ CE Voltage-Divider; ยังไม่มี circuit editor, emitter bypass,
   FET, หรือ AC ของทุก bias mode
 - ใช้ `git.exe` ที่มาพร้อม GitHub Desktop (ไม่ได้ติดตั้ง Git แยก) ในการ init/commit/push
-  ไปยัง `https://github.com/piyarat06/BJT-DC-Bias-Web-App` — commit SHA ตามท้ายบันทึกนี้
+  ไปยัง `https://github.com/piyarat06/BJT-DC-Bias-Web-App`
+- Feature commit (Lab 04 simulator): `8466b60619f3e63d7ee29e30f8d2194ddb50e705`
 - `tools/ngspice/` และ `.venv/` ถูก ignore ไม่ได้ commit ไบนารี/virtualenv ลง repo
