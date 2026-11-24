@@ -32,9 +32,10 @@ VE = IE·RE, VB = VE+VBE, VC = VCC−IC·RC, VCE = VC−VE
 คำสั่ง: `.venv\Scripts\python.exe -m unittest discover -s tests -v`
 (จาก repo root, venv ที่ติดตั้งจาก `requirements.txt`)
 
-ผลรอบสุดท้าย (หลังเพิ่ม Lab 04): **Ran 69 tests — OK (ผ่านทั้งหมด)** —
+ผลรอบสุดท้าย (หลังเพิ่มแท็ปหลักฐาน B2–B8): **Ran 79 tests — OK (ผ่านทั้งหมด)** —
 17 `test_dc_bias.py` + 23 `test_web.py` (Lab 03 เดิม 40 ตัวยังผ่าน) +
-20 `test_spice_engine.py` (รวม timeout/exit≠0/raw ว่าง) + 9 `test_simulator_web.py` (Lab 04)
+20 `test_spice_engine.py` (รวม timeout/exit≠0/raw ว่าง) + 9 `test_simulator_web.py` +
+10 `test_acceptance_web.py` (route ต่อข้อ, กราฟหลายรอบ, 404)
 - `tests/test_dc_bias.py` — 17 tests: ค่าอ้างอิง 9 ค่าของ Voltage-Divider,
   ตัวเลขสุดขั้ว (ตรวจ finite), validation 7 กรณี, ข้อความ error ระบุชื่อฟิลด์,
   ค่า inf/NaN ถูกปฏิเสธ, cutoff, ขอบเขต VTH==VBE, saturation **+ 8 tests
@@ -150,6 +151,27 @@ Status `running` ก็ตรวจใน browser จริง: หลังส�
   `ไม่สามารถวาดกราฟจากข้อมูลที่ส่งมาได้` แม้ตัวเลขถูกต้อง แก้โดยส่ง array ตรงๆ
   และอัปเดต `tests/test_simulator_web.py` ให้ตรวจ shape นั้น แล้ว restart server
   และรัน B4 ใหม่จน SVG แสดง 2 อัน (PASS)
+
+## 8. แท็ปหลักฐานข้อละอันสำหรับแคปส่งอาจารย์ (24 พฤศจิกายน 2569)
+
+เพิ่ม route อ่านอย่างเดียว `/acceptance` และ `/acceptance/b2` … `/acceptance/b8`
+เพื่อให้แต่ข้อเปิดเป็นแท็ปเดียวแล้วกดแคปได้เลย ทุกครั้งที่เปิด URL จะ**รัน ngspice ใหม่**
+แล้ว render ผล/กราฟ/netlist/log จากรอบนั้น (ไม่ใช้ค่าจาก `docs/validation.md`)
+
+| ข้อ | URL (เปิดแท็ปใหม่ได้เลย) | สิ่งที่แสดงบนหน้า | ไฟล์แคปที่บันทึกไว้ |
+|---|---|---|---|
+| B2 | `http://127.0.0.1:5000/acceptance/b2` | ตาราง VB/VE/VC/VCE/IB/IC/IE + netlist `RE n_e 0 1k` + log | `docs/screenshots/B2-dc.png` |
+| B3 | `http://127.0.0.1:5000/acceptance/b3` | netlist `RE n_e 0 2k`, IC 0.696 mA, อินพุต RE=2 kΩ | `docs/screenshots/B3-re.png` |
+| B4 | `http://127.0.0.1:5000/acceptance/b4` | gain 1.75 V/V, phase −179.9°, fL/fH + Bode 2 กราฟ | `docs/screenshots/B4-ac.png` |
+| B5 | `http://127.0.0.1:5000/acceptance/b5` | Vin/Vout peak, `inverted`, กราฟ Time (ms) / Voltage (mV) | `docs/screenshots/B5-tran.png` |
+| B6 | `http://127.0.0.1:5000/acceptance/b6` | **2 run** ในแท็ปเดียว: `SIN(0 0.03 1000 0 0)` และ `SIN(0 0.01 5000 0 0)` พร้อมกราฟคนละอัน | `docs/screenshots/B6-source.png` |
+| B7 | `http://127.0.0.1:5000/acceptance/b7` | `RE=0` → `Simulation status: error`, ไม่มีตารางผล/กราฟ | `docs/screenshots/B7-error.png` |
+| B8 | `http://127.0.0.1:5000/acceptance/b8` | ผล AC ชุดเดียวกันในคอลัมน์เต็มจอ **และ** กรอบ 390 CSS px (คนละ chart target) | `docs/screenshots/B8-ui.png` |
+
+เปิดหน้า `/acceptance` เพื่อดูลิงก์รวมทั้ง 7 ข้อ · ใช้ OpenCode in-app browser (`tabs.open`,
+`reload`, `evaluate`, `screenshot`) ตรวจว่า B4 ได้ 2 SVG, B5 ได้ 1 SVG, B6 ได้ 2 SVG
+(คนละ run), B8 ได้ 2+2 SVG และ B7 ไม่มี `sim-plot-data` — ตรงกับ test ใน
+`tests/test_acceptance_web.py`
 
 ### ข้อจำกัด / สิ่งที่ยังไม่ทำ
 

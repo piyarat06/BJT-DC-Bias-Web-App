@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if case %}{{ case_id|upper }} · Lab 04 Acceptance{% else %}Lab 04 Acceptance · B2–B8{% endif %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% macro result_panel(run, suffix) %}
+  <table class="accept-result">
+    <thead><tr><th>ค่า</th><th>ผลลัพธ์จากการจำลอง</th></tr></thead>
+    <tbody>
+      {% for row in run.sim.summary %}<tr><td>{{ row.label }}</td><td>{{ row.value }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% if run.sim.charts %}
+  <h4>Plots · ข้อมูลจากผลรันจริง</h4>
+  <div class="charts" id="sim-charts{{ suffix }}" aria-label="Simulation plots"></div>
+  <script id="sim-plot-data{{ suffix }}" type="application/json">{{ run.sim.charts|tojson }}</script>
+  {% endif %}
+{% endmacro %}
+
+<main class="card acceptance">
+  <header class="accept-header">
+    <h1>ENG29 2121 · Lab 04 — Acceptance Evidence</h1>
+    <p class="subtitle">CE Voltage-Divider Amplifier · ผลทั้งหมดจากการรัน ngspice จริง แยกจากผลคำนวณ Lab 03</p>
+    <nav class="accept-nav" aria-label="Acceptance cases">
+      {% for key, config in cases.items() %}
+      <a href="/acceptance/{{ key }}" {% if key == case_id %}aria-current="page"{% endif %}>{{ key|upper }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+
+  {% if not case %}
+  <h2>B2–B8 — เลือกแท็ปที่ต้องการแคปส่งอาจารย์</h2>
+  <ol class="accept-list">
+    {% for key, config in cases.items() %}
+    <li>
+      <a href="/acceptance/{{ key }}"><strong>{{ key|upper }}</strong> · {{ config.title }}</a>
+      <p>{{ config.subtitle }}</p>
+    </li>
+    {% endfor %}
+  </ol>
+  {% else %}
+  <section class="accept-case">
+    <h2>{{ case_id|upper }} · {{ case.title }}</h2>
+    <p class="subtitle">{{ case.subtitle }}</p>
+
+    {% set has_error = runs|selectattr('error')|list|length > 0 %}
+    <div class="status-row">
+      <span class="chip">Engine: {{ sim_engine or 'ไม่พร้อม' }}</span>
+      <span class="chip">Model: {{ sim_model }}</span>
+      <span class="chip {% if has_error %}chip-error{% else %}chip-ok{% endif %}">
+        Simulation status: {% if has_error %}error{% else %}success{% endif %}
+      </span>
+    </div>
+    <p class="provenance">
+      <strong>Provenance:</strong> ตัวเลข/กราฟด้านล่าง parse จาก raw file ของ ngspice รอบที่รันเมื่อเปิดแท็ปนี้
+      — ไม่ใช่ค่าฮาร์ดโคดและไม่ใช้ผล Analytical ของ Lab 03
+    </p>
+
+    {% for run in runs %}
+    <section class="accept-run">
+      <h3>{{ run.label }}</h3>
+      <table class="accept-input">
+        <thead><tr><th>Input</th><th>ค่าที่ป้อน</th></tr></thead>
+        <tbody>
+          {% for name, value in run.inputs %}<tr><td>{{ name }}</td><td>{{ value }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      <p><strong>Expected / reference:</strong> {{ run.expected }}</p>
+
+      {% if run.error %}
+      <div class="error" role="alert">
+        <strong>การจำลองไม่สำเร็จ:</strong> {{ run.error }}
+      </div>
+      <p class="notes">ไม่มีตารางผล ไม่มีกราฟ และไม่มีการใช้ผลจากรอบก่อนหน้า</p>
+      {% else %}
+        {% if case.views %}
+          {% for suffix, label in case.views %}
+          <div class="accept-view {% if suffix == 'mobile' %}accept-view-mobile{% endif %}">
+            <h4>{{ label }}</h4>
+            {{ result_panel(run, '-' ~ suffix) }}
+          </div>
+          {% endfor %}
+        {% else %}
+          {{ result_panel(run, '' if runs|length == 1 else '-run' ~ loop.index) }}
+        {% endif %}
+
+        <h4>Engine Status &amp; Provenance</h4>
+        <ul class="notes">
+          {% for note in run.sim.notes %}<li>{{ note }}</li>{% endfor %}
+          <li>Engine: {{ run.sim.engine }} · Model: {{ run.sim.model }}</li>
+          <li>Netlist ถูกสร้างจาก input ด้านบน และรันด้วย subprocess แบบ working directory ใหม่ต่อรอบ</li>
+        </ul>
+        <h4>Netlist ที่ใช้รันจริง</h4>
+        <div class="code-wrap"><pre class="code">{{ run.sim.netlist }}</pre></div>
+        <h4>ngspice log (ท้ายข้อความ)</h4>
+        <div class="code-wrap"><pre class="code">{{ run.sim.log_excerpt }}</pre></div>
+      {% endif %}
+    </section>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <footer class="accept-footer">
+    <p>Engine: ngspice-47 (console) · Model: QNPN IS=1e-14 BF=100 VAF=100 CJE=25p CJC=8p TF=0.4n</p>
+    <p>หลักฐานตรวจด้วย OpenCode in-app browser (ไม่ใช่ Playwright MCP) · เปิดแต่ละ B ที่ `/acceptance/b…` แล้วแคปหน้าจอได้เลย</p>
+  </footer>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

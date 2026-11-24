@@ -13,11 +13,13 @@
   `/simulate` ไป `spice_engine.py`, จัดการ error/status ที่แสดงต่อผู้ใช้
 - `templates/index.html` — การแสดงผลเท่านั้น **ห้ามฝังสมการฟิสิกส์**
   (แก้สมการใน `dc_bias.py`/`spice_engine.py` ต้องไม่ต้องแก้ HTML)
+- `templates/acceptance.html` — หน้า `/acceptance/b2`…`b8` สำหรับแคปส่งอาจารย์
+  (รัน ngspice ใหม่ต่อการเปิด URL, แสดง input/expected/ผล/netlist/log ต่อข้อ)
 - `static/app.js` — วาด SVG จาก JSON ที่ server ส่งมาเท่านั้น **ห้ามคำนวณฟิสิกส์
   หรือสร้างข้อมูลกราฟขึ้นเอง**, ห้ามใช้ mock/fallback เมื่อไม่มีข้อมูลจริง
 - `static/style.css` — ความสวยงาม/การจัดหน้า
 - `tests/` — `test_dc_bias.py`, `test_web.py` (Lab 03), `test_spice_engine.py`,
-  `test_simulator_web.py` (Lab 04)
+  `test_simulator_web.py`, `test_acceptance_web.py` (Lab 04)
 
 ## กฎการทำงาน
 

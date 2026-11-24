@@ -222,9 +222,46 @@ footer {
 .chart-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.82rem; color: #405d73; }
 .chart-legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; margin-right: 6px; vertical-align: middle; background: var(--line-color); }
 
+/* Lab 04 — screenshot-ready acceptance tabs (B2–B8) */
+.acceptance { max-width: 1180px; }
+.accept-header h1 { margin-bottom: 4px; }
+.accept-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 20px; }
+.accept-nav a {
+  display: inline-block; padding: 6px 12px; border: 1px solid #cddfe9;
+  border-radius: 16px; background: #eef4f9; color: #174867;
+  font-weight: 700; text-decoration: none;
+}
+.accept-nav a[aria-current="page"] { background: #0c8078; border-color: #0c8078; color: #fff; }
+.accept-list { padding-left: 1.3em; }
+.accept-list li { margin-bottom: 12px; }
+.accept-list p { margin: 3px 0 0; color: #405d73; font-size: 0.9rem; }
+.accept-case h2 { margin-bottom: 4px; }
+.accept-run {
+  border: 1px solid #d3e0ec; border-radius: 10px; padding: 16px 18px;
+  margin: 18px 0; background: #fbfdfe;
+}
+.accept-run h3 { margin-top: 0; color: #113c60; }
+.accept-input, .accept-result { width: 100%; border-collapse: collapse; margin: 10px 0 14px; }
+.accept-input th, .accept-input td, .accept-result th, .accept-result td {
+  border: 1px solid #d3e0ec; padding: 7px 10px; text-align: left; font-size: 0.88rem;
+}
+.accept-input th, .accept-result th { background: #eaf2f8; color: #113c60; }
+.accept-result td:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.accept-view { margin: 14px 0; }
+.accept-view h4 { margin: 0 0 8px; color: #155a78; }
+.accept-view-mobile {
+  width: 390px; max-width: 100%; border: 2px solid #333; border-radius: 8px;
+  padding: 10px; background: #fff;
+}
+.accept-view-mobile .accept-result th,
+.accept-view-mobile .accept-result td { font-size: 0.78rem; padding: 5px 7px; }
+.accept-footer { border-top: 1px solid #d3e0ec; margin-top: 24px; padding-top: 12px; }
+.accept-footer p { margin: 4px 0; font-size: 0.82rem; color: #405d73; }
+
 @media (max-width: 560px) {
   .card { margin: 10px; padding: 18px; }
   .status-row { gap: 6px; }
   .chip { font-size: 0.75rem; }
   .sim-modes { gap: 12px; }
+  .accept-view-mobile { width: 100%; border-width: 1px; }
 }

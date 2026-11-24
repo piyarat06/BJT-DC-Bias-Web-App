@@ -122,14 +122,29 @@ BF=100 ใกล้เคียง β=100 ของชุดข้อมูล L
 IB 12.299 µA, IC 1.230 mA, IE 1.242 mA, VE 1.242 V, VB 1.942 V,
 VC 9.294 V, VCE 8.052 V
 
+## แท็ปหลักฐานแคปส่งอาจารย์ (B2–B8)
+
+เปิด `http://127.0.0.1:5000/acceptance` แล้วเลือกข้อ หรือเปิดตรงได้เลย:
+
+- `/acceptance/b2` DC `.op`
+- `/acceptance/b3` เปลี่ยน RE 1→2 kΩ
+- `/acceptance/b4` AC Bode gain/phase
+- `/acceptance/b5` Transient 10 mV / 1 kHz
+- `/acceptance/b6` Transient 2 รอบ (เปลี่ยน amplitude และ frequency) ในแท็ปเดียว
+- `/acceptance/b7` input ผิด (RE=0) → error ไม่มีกราฟ
+- `/acceptance/b8` ผล AC เดียวกันแสดงทั้ง desktop และกรอบ 390 CSS px
+
+ทุก URL รัน ngspice ใหม่เมื่อเปิด และแสดง input/expected/ผล/netlist/log แยกตามข้อ
+ภาพแคปอยู่ใน `docs/screenshots/B2-dc.png` … `B8-ui.png` (รายละเอียดใน `docs/validation.md` ข้อ 8)
+
 ## Automated Tests
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-ผลที่คาดหวัง: **Ran 69 tests ... OK**
-(17 dc_bias + 23 web เดิม + 20 spice_engine + 9 simulator_web)
+ผลที่คาดหวัง: **Ran 79 tests ... OK**
+(17 dc_bias + 23 web เดิม + 20 spice_engine + 9 simulator_web + 10 acceptance_web)
 ถ้าไม่มี ngspice การรันจริง 5–6 ตัวจะถูก `skip` อัตโนมัติ (ไม่ใช่ FAIL)
 
 ## ความปลอดภัย / ข้อควรระวัง

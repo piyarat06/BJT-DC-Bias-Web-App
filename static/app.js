@@ -121,18 +121,23 @@
   }
 
   function drawPlots() {
-    const dataNode = document.getElementById("sim-plot-data");
-    const target = document.getElementById("sim-charts");
-    if (!dataNode || !target || target.childElementCount) return;
-    try {
-      const specs = JSON.parse(dataNode.textContent);
-      specs.forEach((spec) => target.appendChild(renderChart(spec)));
-    } catch (error) {
-      const note = document.createElement("p");
-      note.className = "error";
-      note.textContent = "ไม่สามารถวาดกราฟจากข้อมูลที่ส่งมาได้";
-      target.appendChild(note);
-    }
+    // One page can host several runs (B6) or two viewport panels (B8).
+    document.querySelectorAll('script[type="application/json"][id^="sim-plot-data"]')
+      .forEach((dataNode) => {
+        const target = document.getElementById(
+          dataNode.id.replace("sim-plot-data", "sim-charts")
+        );
+        if (!target || target.childElementCount) return;
+        try {
+          const specs = JSON.parse(dataNode.textContent);
+          specs.forEach((spec) => target.appendChild(renderChart(spec)));
+        } catch (error) {
+          const note = document.createElement("p");
+          note.className = "error";
+          note.textContent = "ไม่สามารถวาดกราฟจากข้อมูลที่ส่งมาได้";
+          target.appendChild(note);
+        }
+      });
   }
 
   function markRunning() {
